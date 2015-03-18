@@ -1,5 +1,5 @@
-/*  
- *   Copyright 2015 OSBI Ltd
+/**  
+ *   Copyright 2012 OSBI Ltd
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -12,11 +12,15 @@
  *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
+ *
+ * \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+ *
+ * Description: Module License Upload.
+ * Version: 1.0.0
+ * Last update: 2014/09/10
+ * Author: Breno Polanski <breno.polanski@gmail.com>
  */
- 
-/**
- * Module License Upload
- */
+
 var upload = (function($, window, document, undefined) {
 
     // undefined is used here as the undefined global variable in ECMAScript 3 is
@@ -71,29 +75,28 @@ var upload = (function($, window, document, undefined) {
         },
 
         _xhr: function(options, callback) {
-            $.ajax({
-                url: options.url,
-                type: options.type,
-                data: options.data,
-                contentType: 'application/x-java-serialized-object',
-                processData: false,
-                success: function(data, status, jqXHR) {
+            var xhttp = new window.XMLHttpRequest();
+            xhttp.open(options.type, options.url, true);
+            xhttp.setRequestHeader('Content-Type', 'application/x-java-serialized-object');            
+            xhttp.send(options.data);
+            xhttp.onreadystatechange = function() {
+                if (xhttp.status === 200 && xhttp.readyState === 4) {
                     module._clearInputFile();
                     module._loadingButton(false);
-                    callback('alert-success', data);
-                },
-                error: function(jqXHR, status, errorThrown) {
-                    module._clearInputFile();
-                    module._loadingButton(false);
-                    callback('alert-danger', 'Error while uploading the file: (' + errorThrown + ')');
+                    callback('alert-success', xhttp.responseText);
                 }
-            });
+                else {
+                    module._clearInputFile();
+                    module._loadingButton(false);
+                    callback('alert-danger', 'Error while uploading the file: (' + xhttp.statusText + ')');
+                }
+            };
         },
 
         sendFile: function() {
             $('#btn-sendfile').on('click', function() {
                 var file = $('#file-chooser')[0].files[0];
-
+                
                 if (file !== undefined) {
                     module._loadingButton(true);
                     module._xhr({type: 'POST', url: module._baseURL, data: file}, module._notifyUser);

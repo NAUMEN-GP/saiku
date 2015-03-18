@@ -16,20 +16,16 @@
 
 package org.saiku.repository;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.JcrUtils;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.type.TypeFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -75,11 +71,12 @@ class Acl2 {
       Map<String, AclEntry> acl = new TreeMap<String, AclEntry>();
 
       try {
-        TypeReference ref = new TypeReference<Map<String, AclEntry>>() { };
-        acl = mapper.readValue(node.getProperty("owner").getString(), ref);
+
+        acl = mapper.readValue(node.getProperty("owner").getString(), TypeFactory
+            .mapType(HashMap.class, String.class, AclEntry.class));
         // mapper.readValue(acl, AclEntry.class);
-        entry = acl.get(node.getPath());
-        ///entry = e.getValue();
+        Map.Entry<String, AclEntry> e = acl.entrySet().iterator().next();
+        entry = e.getValue();
       } catch (PathNotFoundException e) {
         LOG.debug("Path(owner) not found: " + node.getPath(), e.getCause());
       } catch (Exception e) {
@@ -204,12 +201,11 @@ class Acl2 {
     }
   }
 
-  public Node serialize(@NotNull Node node) {
+  public void serialize(@NotNull Node node) {
     try {
       ObjectMapper mapper = new ObjectMapper();
       node.setProperty("owner", "");
       node.setProperty("owner", mapper.writeValueAsString(acl));
-      return node;
     } catch (Exception e) {
       try {
         LOG.debug("Error while reading ACL files at path: " + node.getPath(), e.getCause());
@@ -217,7 +213,6 @@ class Acl2 {
         LOG.debug("Repository Exception", e1.getCause());
       }
     }
-    return node;
   }
 
   private Map<String, AclEntry> deserialize(@Nullable Node node) {
@@ -225,9 +220,8 @@ class Acl2 {
     Map<String, AclEntry> acl = new TreeMap<String, AclEntry>();
     try {
       if (node != null && node.getProperty("owner") != null) {
-        TypeReference ref = new TypeReference<Map<String, AclEntry>>() { };
-
-        acl = mapper.readValue(node.getProperty("owner").getString(), ref);
+        acl = mapper.readValue(node.getProperty("owner").getString(), TypeFactory
+            .mapType(HashMap.class, String.class, AclEntry.class));
       }
     } catch (Exception e) {
 
@@ -259,7 +253,7 @@ class Acl2 {
       return true;
     }
     List<AclMethod> acls = getMethods(path, username, roles);
-    return acls.contains(AclMethod.WRITE);
+    return !acls.contains(AclMethod.WRITE);
   }
 
 
@@ -278,12 +272,10 @@ class Acl2 {
         Map<String, AclEntry> aclMap = new TreeMap<String, AclEntry>();
 
         for (String key : folderAclMap.keySet()) {
-          if (key.equals(folder.getPath())) {
-            AclEntry entry = folderAclMap.get(key);
-            //FileName fn = folder.resolveFile( key ).getName();
-            //String childPath = repoRoot.getName().getRelativeName( fn );
-            aclMap.put(folder.getPath(), entry);
-          }
+          AclEntry entry = folderAclMap.get(key);
+          //FileName fn = folder.resolveFile( key ).getName();
+          //String childPath = repoRoot.getName().getRelativeName( fn );
+          aclMap.put(folder.getPath(), entry);
         }
 
         acl.putAll(aclMap);

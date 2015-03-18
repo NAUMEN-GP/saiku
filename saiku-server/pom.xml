@@ -5,13 +5,13 @@
                 <version>3.1-SNAPSHOT</version>
         </parent>
 	
-	<modelVersion>4.0.0</modelVersion>
+<modelVersion>4.0.0</modelVersion>
 	<artifactId>saiku-server</artifactId>
 	<packaging>pom</packaging>
     <version>3.1-SNAPSHOT</version>
-	<properties>
-		<min>nomin</min>
-	</properties>
+    <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+    </properties>
 	<build>
 		<plugins>
 			<plugin>
@@ -31,15 +31,6 @@
 									<artifactId>saiku-webapp</artifactId>
 									<version>${project.version}</version>
 									<type>war</type>
-									<outputDirectory>target/stage/</outputDirectory>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.saiku</groupId>
-									<artifactId>saiku-ui</artifactId>
-									<version>${project.version}</version>
-									<classifier>${min}</classifier>
-									<type>war</type>
-									<destFileName>saiku-ui.war</destFileName>
 									<outputDirectory>target/stage/</outputDirectory>
 								</artifactItem>
 								<artifactItem>
@@ -111,14 +102,13 @@
           							    <exclude name="webapps/ROOT/**" />
 									</fileset>
 								</copy>
-
-
+								
 								<unzip dest="target/dist/saiku-server/tomcat/webapps/ROOT">
 									<fileset dir="target/stage/">
-										<include name="saiku-ui.war" />
+										<include name="saiku-ui-${project.version}.war" />
 									</fileset>
 								</unzip>
-
+								
 								<copy todir="target/dist/saiku-server/tomcat/webapps/saiku">
 									<fileset dir="target/stage/webapp" />
 								</copy>
@@ -135,7 +125,24 @@
         									<exclude name="**/*.sh" />
       									</tarfileset>
            						</tar>
+           						
+           						<!--<unzip dest="target/dist/saiku-server/tomcat/webapps/saiku/WEB-INF/classes/">
+									<fileset dir="${basedir}/../util/">
+										<include name="foodmart.zip" />
+									</fileset>
+								</unzip>-->
+								<!--<copy todir="target/dist/saiku-server/tomcat/webapps/saiku/WEB-INF/classes/saiku-datasources/" overwrite="true">
+									<fileset dir="${basedir}/../util/">
+										<include name="foodmart" />
+									</fileset>
+								</copy>-->
+                                <!--<copy todir="target/dist/saiku-server/tomcat/webapps/saiku/WEB-INF/classes/foodmart/" overwrite="true">
+									<fileset dir="${basedir}/../util/">
+										<include name="FoodMart.xml" />
+									</fileset>
+								</copy>-->
 
+								
 								<zip destfile="target/saiku-server-foodmart-${project.version}.zip">
 									<zipfileset dir="target/dist/" />
 								</zip>

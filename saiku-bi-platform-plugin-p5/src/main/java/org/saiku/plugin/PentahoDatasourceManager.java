@@ -20,6 +20,7 @@ import org.saiku.datasources.connection.ISaikuConnection;
 import org.saiku.datasources.connection.RepositoryFile;
 import org.saiku.datasources.datasource.SaikuDatasource;
 import org.saiku.repository.AclEntry;
+import org.saiku.repository.IRepositoryManager;
 import org.saiku.repository.IRepositoryObject;
 import org.saiku.service.datasource.IDatasourceManager;
 import org.saiku.service.user.UserService;
@@ -28,22 +29,26 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.api.repository.RepositoryException;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.action.mondrian.catalog.IMondrianCatalogService;
-import org.pentaho.platform.plugin.action.olap.IOlapService;
+import org.pentaho.platform.plugin.action.mondrian.catalog.MondrianCatalog;
+import org.pentaho.platform.util.messages.LocaleHelper;
 
 import java.util.*;
 
+import javax.jcr.RepositoryException;
+
 import mondrian.olap.MondrianProperties;
+import mondrian.olap.Util;
+import mondrian.rolap.RolapConnectionProperties;
+import mondrian.util.Pair;
 
 public class PentahoDatasourceManager implements IDatasourceManager {
 
     private static final Log LOG = LogFactory.getLog(PentahoDatasourceManager.class);
 
-    private Map<String, SaikuDatasource> datasources =
-        Collections.synchronizedMap(new HashMap<String, SaikuDatasource>());
+    private Map<String, SaikuDatasource> datasources = Collections.synchronizedMap(new HashMap<String, SaikuDatasource>());
 
     private String saikuDatasourceProcessor;
 
@@ -56,8 +61,6 @@ public class PentahoDatasourceManager implements IDatasourceManager {
     private IMondrianCatalogService catalogService;
 
     private String datasourceResolver;
-
-	private IOlapService olapService;
 
     public void setDatasourceResolverClass(String datasourceResolverClass) {
         this.datasourceResolver = datasourceResolverClass;
@@ -91,42 +94,85 @@ public class PentahoDatasourceManager implements IDatasourceManager {
 
     }
 
+  public void setRepositoryManager(IRepositoryManager irm) {
 
+  }
 
-
-
-
-    private Map<String, SaikuDatasource> loadDatasources() {
+  private Map<String, SaikuDatasource> loadDatasources() {
         try {
-
-
             this.session = PentahoSessionHolder.getSession();
-            
+
             ClassLoader cl = this.getClass().getClassLoader();
             ClassLoader cl2 = this.getClass().getClassLoader().getParent();
 
             Thread.currentThread().setContextClassLoader(cl2);
-            
-            this.olapService = PentahoSystem.get( IOlapService.class, session );
+            this.catalogService = PentahoSystem.get(IMondrianCatalogService.class,
+                    session);
 
-
+            List<MondrianCatalog> catalogs = catalogService.listCatalogs(session, true);
             Thread.currentThread().setContextClassLoader(cl);
             if (StringUtils.isNotBlank(this.datasourceResolver)) {
                 MondrianProperties.instance().DataSourceResolverClass.setString(this.datasourceResolver);
             }
 
-            Set<String> uniqueCatalogs = new HashSet<String>(olapService.getCatalogNames(session));
-            System.out.println(uniqueCatalogs);
-            System.out.println("Catalogs Count: " + uniqueCatalogs.size());
-            for (String name : uniqueCatalogs) {
-                
+            for (MondrianCatalog catalog : catalogs) {
+                String name = catalog.getName();
+                Util.PropertyList parsedProperties = Util.parseConnectString(catalog
+                        .getDataSourceInfo());
+
+                String dynProcName = parsedProperties.get(
+                        RolapConnectionProperties.DynamicSchemaProcessor.name());
+                if (StringUtils.isNotBlank(dynamicSchemaProcessor) && StringUtils.isBlank(dynProcName)) {
+                    parsedProperties.put(RolapConnectionProperties.DynamicSchemaProcessor.name(), dynamicSchemaProcessor);
+
+                }
+
+                StringBuilder builder = new StringBuilder();
+                builder.append("jdbc:mondrian:");
+                builder.append("Catalog=");
+                builder.append(catalog.getDefinition());
+                builder.append("; ");
+
+                Iterator<Pair<String, String>> it = parsedProperties.iterator();
+
+                while (it.hasNext()) {
+                    Pair<String, String> pair = it.next();
+                    builder.append(pair.getKey());
+                    builder.append("=");
+                    builder.append(pair.getValue());
+                    builder.append("; ");
+                }
+
+//				builder.append("PoolNeeded=false; ");
+
+                builder.append("Locale=");
+                if (session != null) {
+                    builder.append(session.getLocale().toString());
+                } else {
+                    builder.append(LocaleHelper.getLocale().toString());
+                }
+                builder.append(";");
+
+                String url = builder.toString();
+
+                LOG.debug("NAME: " + catalog.getName() + " DSINFO: " + url + "  ###CATALOG: " + catalog.getName());
+
                 Properties props = new Properties();
+                props.put("driver", "mondrian.olap4j.MondrianOlap4jDriver");
+                props.put("location", url);
+
+                if (saikuDatasourceProcessor != null) {
+                    props.put(ISaikuConnection.DATASOURCE_PROCESSORS, saikuDatasourceProcessor);
+                }
                 if (saikuConnectionProcessor != null) {
                     props.put(ISaikuConnection.CONNECTION_PROCESSORS, saikuConnectionProcessor);
                 }
+                props.list(System.out);
 
                 SaikuDatasource sd = new SaikuDatasource(name, SaikuDatasource.Type.OLAP, props);
                 datasources.put(name, sd);
+
+
             }
             return datasources;
         } catch (Exception e) {
@@ -211,38 +257,6 @@ public class PentahoDatasourceManager implements IDatasourceManager {
 
     public void restoreLegacyFiles(byte[] data) {
 
-    }
-
-    public String getFoodmartschema() {
-        return null;
-    }
-
-    public void setFoodmartschema(String schema) {
-
-    }
-
-    public void setFoodmartdir(String dir) {
-
-    }
-
-    public String getFoodmartdir() {
-        return null;
-    }
-
-    public String getDatadir() {
-        return null;
-    }
-
-    public void setDatadir(String dir) {
-
-    }
-
-    public void setFoodmarturl(String foodmarturl) {
-
-    }
-
-    public String getFoodmarturl() {
-        return null;
     }
 
     public void setACL(String a, String b, String c, List<String> d) {

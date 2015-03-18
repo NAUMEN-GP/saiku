@@ -1,9 +1,9 @@
-# [Saiku UI](http://www.meteorite.bi)
+# [Saiku UI](http://meteorite.bi/saiku)
 
-[![saiku-view](http://www.meteorite.bi/images/chart1.jpg)](http://demo.saikuanalytics.com)
+[![saiku-view](https://dl.dropboxusercontent.com/u/13927708/SaikuBlog/saiku-view.png)](http://demo.analytical-labs.com)
 
 A user interface for the analytical tool Saiku. <br />
-For more information, see [Saiku](http://www.meteorite.bi).
+For more information, see [Saiku](http://www.meteorite.bi/saiku).
 
 > You can put the UI on a separate server (apache httpd or simply a webapp in tomcat/webapps e.g).
 
@@ -58,11 +58,11 @@ We do care about it.
 
 ![IE](https://raw.github.com/alrra/browser-logos/master/internet-explorer/internet-explorer_48x48.png) | ![Chrome](https://raw.github.com/alrra/browser-logos/master/chrome/chrome_48x48.png) | ![Firefox](https://raw.github.com/alrra/browser-logos/master/firefox/firefox_48x48.png) | ![Opera](https://raw.github.com/alrra/browser-logos/master/opera/opera_48x48.png) | ![Safari](https://raw.github.com/alrra/browser-logos/master/safari/safari_48x48.png)
 --- | --- | --- | --- | --- |
-IE 9+ ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ |
+IE 8+ ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ |
 
 ## Team
 
-[Saiku UI](http://www.meteorite.bi) is maintained by these people and a bunch of awesome [contributors](https://github.com/OSBI/saiku-ui/graphs/contributors).
+[Saiku UI](http://meteorite.bi/saiku) is maintained by these people and a bunch of awesome [contributors](https://github.com/OSBI/saiku-ui/graphs/contributors).
 
 [![Tom Barber](https://avatars0.githubusercontent.com/u/103544?v=2&s=70)](https://github.com/buggtb) | [![Paul Stoellberger](https://avatars3.githubusercontent.com/u/454645?v=2&s=70)](https://github.com/pstoellberger) | [![Mark Cahill](https://avatars3.githubusercontent.com/u/200365?v=2&s=70)](https://github.com/thinkjson) | [![Breno Polanski](https://avatars1.githubusercontent.com/u/1894191?v=2&s=70)](https://github.com/brenopolanski) | [![Luis Garcia](https://avatars2.githubusercontent.com/u/2557898?v=2&s=70)](https://github.com/PeterFalken) 
 --- | --- | --- | --- | --- | --- | --- |

@@ -15,8 +15,16 @@
  */
 package org.saiku.plugin;
 
-import org.saiku.service.ISessionService;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.saiku.service.ISessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.Authentication;
@@ -27,11 +35,6 @@ import org.springframework.security.context.SecurityContextHolder;
 import org.springframework.security.providers.UsernamePasswordAuthenticationToken;
 import org.springframework.security.ui.WebAuthenticationDetails;
 import org.springframework.security.userdetails.User;
-
-import java.util.*;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 
 public class PentahoSessionService implements ISessionService {
@@ -82,7 +85,7 @@ public class PentahoSessionService implements ISessionService {
 			username = u.getUsername();
 		}
 		else {
-			username = SecurityContextHolder.getContext().getAuthentication().getName();
+			username = "existinguser";
 		}
 		sessionHolder.get(key).put("username", username);
 	}

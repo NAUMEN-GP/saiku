@@ -43,10 +43,7 @@ var AdminConsole = Backbone.View.extend({
         'click .submitrestore' : 'restoreFile',
         'click .submitrestorelegacy' : 'restoreLegacy',
 
-        'click .license_info' : 'show_license_info',
-        'click .license_users_list' : 'show_license_user_list',
-        'click .add_license_user' : 'add_license_user',
-        'click .remove_license_user' : 'remove_license_user'
+        'click .license_info' : 'show_license_info'
     },
     initialize: function (args) {
         _.bindAll(this, "fetch_users", "fetch_schemas", "fetch_datasources", "clear_users", "clear_datasources", "new_add_role", "new_remove_role", "save_new_user", "advanced_url", "view_datasource");
@@ -59,10 +56,8 @@ var AdminConsole = Backbone.View.extend({
             license = new License();
 
         license.fetch_license('api/license/', function(opt) {
-            if (opt.status === 'success') {
-                that.licenseInfo = opt.data.toJSON();
-                that.licenseUsers = new LicenseUsersCollection(null, {});
-                that.licenseUsers.fetch();
+            if (opt.status !== 'error') {
+                that.licenseInfo = opt.data;
             }
             else {
                 $(that.el).find('.license_container').hide();
@@ -74,103 +69,10 @@ var AdminConsole = Backbone.View.extend({
         var html = this.licenseInfoTemplate;
 
         yourEpoch = parseFloat(this.licenseInfo.expiration);
-        var yourDate = new Date(yourEpoch);
+        var yourDate = new Date( yourEpoch  );
         $(this.el).find('.user_info').html(html);
         $(this.el).find('.license_type > li:nth-child(1)').append(this.licenseInfo.licenseType);
         $(this.el).find('.license_type > li:nth-child(2)').append(yourDate.toLocaleDateString());
-    },
-
-    show_license_user_list: function(event) {
-        event ? event.preventDefault() : '';
-        var html = this.licenseAddUserTemplate;
-        $(this.el).find('.user_info').html(html);
-        var listUsers = this.licenseUsers.toJSON();
-        if (listUsers && !(_.isEmpty(listUsers))) {
-            var htmlListUsers = this.list_users_license_template(listUsers);
-            $(this.el).find('.license_listusers').html(htmlListUsers);
-        }
-    },
-
-    add_license_user: function(event) {
-        event.preventDefault();
-        var self = this;
-        var user = new LicenseUserModel();
-        var name = $(this.el).find("input[name='username']").val();
-
-        if (name !== '') {
-            this.licenseUsers.add({
-                name: name
-            });
-
-            user.save({}, {
-                data: JSON.stringify(self.licenseUsers.toJSON()),
-                contentType: "application/json",
-                success: function(data) {
-                    $(self.el).find("input[name='username']").val('');
-                    self.licenseUsers.fetch();
-                    self.show_license_user_list();
-                },
-                error: function(data) {
-                    $(self.el).find("input[name='username']").val('');
-                    self.licenseUsers.fetch();
-                    self.show_license_user_list();
-                }
-            });
-        }
-        else {
-            alert('The username field can not be empty!');
-            $(this.el).find("input[name='username']").focus();
-        }
-    },
-
-    remove_license_user: function(event) {
-        event.preventDefault();
-        var $currentTarget = $(event.currentTarget);
-        var self = this;
-        var idUser = $currentTarget.parent().attr('id').split('-')[1];
-        var user = this.licenseUsers.get(idUser);
-        /*user.destroy({
-            wait: true,
-            success: function(data) {
-                self.licenseUsers.fetch();
-                self.show_license_user_list();
-            },
-            error: function(data) {
-                self.licenseUsers.fetch();
-                self.show_license_user_list();
-            }
-        });*/
-		this.licenseUsers.remove(user);
-
-		var s =this.licenseUsers.first();
-
-		if(s != null || s!= undefined){
-			s.save({}, {
-				data: JSON.stringify(self.licenseUsers.toJSON()),
-				contentType: "application/json",
-				success: function(data) {
-					$(self.el).find("input[name='username']").val('');
-					self.licenseUsers.fetch();
-					self.show_license_user_list();
-				},
-				error: function(data) {
-					$(self.el).find("input[name='username']").val('');
-					self.licenseUsers.fetch();
-					self.show_license_user_list();
-				}
-			});
-		}
-
-
-
-    },
-
-    list_users_license_template: function(obj) {
-        return _.template(
-            '<% _.each(obj, function(entry) { %>' +
-                '<li id="user-<%= entry.id %>"><%= entry.name %> <a href="#" class="remove_license_user">x</a></li>' +
-            '<% }); %>'
-        )(obj);
     },
 
     back_query: function() {
@@ -231,8 +133,7 @@ var AdminConsole = Backbone.View.extend({
             "<li><strong>Maintenance</strong>" +
             "<ul><li class='backup_restore'>Backup/Restore</li></ul></li>"+
             "<li class='license_container'><strong>License</strong>" +
-            "<ul><li class='license_info'>Information</li>" +
-            "<li class='license_users_list'>Users List</li></ul></li>"+
+            "<ul><li class='license_info'>Information</li></ul></li>"+
             "</ul>" +
             "</ul>" +
             "</div>" +
@@ -432,14 +333,14 @@ var AdminConsole = Backbone.View.extend({
         "<a href='#' class='save_new_user form_button user_button hide'>Save User</a><div class='clear'>" +
         "</div></div></form>"),
     datasourcetemplate: _.template("<form><h3>Create Data Source</h3>" +
-        "<div class='simpleConnection'><label for='connname'>Name:</label><input type='text' name='connname' value='<%= conn.connectionname %>'/><br />" +
+        "<div class='simpleConnection'><label for='connname'>Name:</label><input type='text' name='connname' value='<%= conn.connectionname %>'/><br/>" +
         "<label for='drivertype'>Connection Type:</label><select name='drivertype' class='drivertype'><option value='MONDRIAN'>Mondrian</option><option value='XMLA'>XMLA</option></select><br/>" +
-        "<label for='jdbcurl'>URL:</label><input name='jdbcurl' value='<%= conn.jdbcurl %>' type='text'/><br class='horridbr'/>" +
+        "<label for='jdbcurl'>URL:</label><input name='jdbcurl' value='<%= conn.jdbcurl %>' type='text'/><br/>" +
         "<label for='schemapath'>Schema:</label><select class='schemaselect' name='schemapath'>" +
         "<% _.each(schemas, function(path){%>" +
         "<option  <% if(conn.schema != null && conn.schema === 'mondrian://'+path.attributes.path){ print('selected'); } %> ><%= path.attributes.path %></option>" +
         "<%});%></select><br/>" +
-        "<label for='driver'>Jdbc Driver: </label><input name='driver' value='<%= conn.driver %>' type='text'/><br class='horridbr'/>" +
+        "<label for='driver'>Jdbc Driver: </label><input name='driver' value='<%= conn.driver %>' type='text'/><br/>" +
         "<label for='connusername'>Username: </label><input name='connusername' type='text' value='<%= conn.username %>'/><br/>" +
         "<label for='connpassword'>Password:</label><input name='connpassword' type='text' value='<%= conn.password %>'/><br/></div>" +
         "<div class='advconnection' style='display:none;'><textarea name='adv_text' rows='10' cols='75'><%= conn.advanced %></textarea></div>" +
@@ -456,13 +357,6 @@ var AdminConsole = Backbone.View.extend({
     licenseInfoTemplate: _.template("<h3>License Information</h3>" +
         "<ul class='license_type'><li><strong>License Type: </strong></li>" +
         "<li><strong>License Expiry: </strong></li></ul>"),
-    licenseAddUserTemplate: _.template("<form>" +
-        "<h3>Add user</h3><br>" +
-        "<label for='username'>Username:</label> <input type='text' name='username'>" +
-        "<a href='#' class='add_license_user form_button user_button'>Add User</a><div class='clear'></div><br>" +
-        "<h3>List of Users</h3>" +
-        "<ol class='license_listusers'></ol>" +
-        "</form>"),
 
     view_user: function (event) {
         event.preventDefault();
@@ -533,9 +427,6 @@ var AdminConsole = Backbone.View.extend({
         else{
             this.simple_url(event);
         }
-		this.hide_driver_els(user.get("connectiontype"));
-
-		$(this.el).find('.drivertype').val(user.get("connectiontype"));
         $(this.el).find('.remove_datasource').removeClass("hide");
         $(this.el).find('.refresh_button').removeClass("hide");
     },
@@ -771,19 +662,19 @@ var AdminConsole = Backbone.View.extend({
     	var $currentTarget = $(event.currentTarget);
         $currentTarget.addClass('selected');
         var path = $currentTarget.attr('href').replace('#', '');
-
+        
         // Keep a reference to the main plugin object.
         var this_p = this;
-
+                
         if(path == undefined || path == "") {
         	var conn = new Connection();
             this.datasources.add(conn);
         } else {
         	var conn = this.datasources.get(path);
         }
-
+        
         var v = $(this.el).find("textarea[name='adv_text']").val();
-
+        
         if(v!=null && v!=undefined && v!=""){
             conn.set({"advanced": v});
         } else {
@@ -795,7 +686,7 @@ var AdminConsole = Backbone.View.extend({
             conn.set({"username": $(this.el).find("input[name='connusername']").val()});
             conn.set({"password": $(this.el).find("input[name='connpassword']").val()});
         }
-
+        
         conn.save({}, {
 			data: JSON.stringify(conn.attributes),
 			contentType: "application/json",
@@ -867,46 +758,7 @@ var AdminConsole = Backbone.View.extend({
         $(this.el).find(".simpleConnection").show();
         $(this.el).find(".advconnection").hide();
 
-    },
-	hide_driver_els :function(type){
-		switch(type) {
-			case "XMLA":
-				console.log("Xmla");
-				$(this.el).find('input[name="connusername"]').show();
-				$(this.el).find('input[name="connpassword"]').show();
-				$(this.el).find('input[name="driver"]').show();
-				$(this.el).find('input[name="jdbcurl"]').show();
-				$(this.el).find('.schemaselect').hide();
-				$(this.el).find('input[name="driver"]').hide();
-
-				$(this.el).find('label[for="connusername"]').show();
-				$(this.el).find('label[for="connpassword"]').show();
-				$(this.el).find('label[for="driver"]').show();
-				$(this.el).find('label[for="jdbcurl"]').show();
-				$(this.el).find('label[for="schemapath"]').hide();
-				$(this.el).find('label[for="driver"]').hide();
-				$(this.el).find('.horridbr').hide();
-				break;
-			case "MONDRIAN":
-				console.log("mondrian");
-				$(this.el).find('input[name="connusername"]').show();
-				$(this.el).find('input[name="connpassword"]').show();
-				$(this.el).find('input[name="driver"]').show();
-				$(this.el).find('input[name="jdbcurl"]').show();
-				$(this.el).find('.schemaselect').show();
-				$(this.el).find('input[name="driver"]').show();
-
-
-				$(this.el).find('label[for="connusername"]').show();
-				$(this.el).find('label[for="connpassword"]').show();
-				$(this.el).find('label[for="driver"]').show();
-				$(this.el).find('label[for="jdbcurl"]').show();
-				$(this.el).find('label[for="schemapath"]').show();
-				$(this.el).find('label[for="driver"]').show();
-				$(this.el).find('.horridbr').show();
-				break;
-		}
-	}
+    }
 
 });
 Saiku.events.bind('admin:loaddatasources', function(admin){
@@ -942,38 +794,22 @@ Saiku.events.bind('admin:changedriver', function(options){
             $(div).find('input[name="connpassword"]').show();
             $(div).find('input[name="driver"]').show();
             $(div).find('input[name="jdbcurl"]').show();
-			$(div).find('.schemaselect').hide();
-			$(div).find('input[name="driver"]').hide();
-
-			$(div).find('label[for="connusername"]').show();
+            $(div).find('label[for="connusername"]').show();
             $(div).find('label[for="connpassword"]').show();
             $(div).find('label[for="driver"]').show();
             $(div).find('label[for="jdbcurl"]').show();
-			$(div).find('label[for="schemapath"]').hide();
-			$(div).find('label[for="driver"]').hide();
-			$(div).find('.horridbr').hide();
-
-			break;
+            break;
         case "MONDRIAN":
             console.log("mondrian");
             $(div).find('input[name="connusername"]').show();
             $(div).find('input[name="connpassword"]').show();
             $(div).find('input[name="driver"]').show();
             $(div).find('input[name="jdbcurl"]').show();
-			$(div).find('.schemaselect').show();
-			$(div).find('input[name="driver"]').show();
-
-
-			$(div).find('label[for="connusername"]').show();
+            $(div).find('label[for="connusername"]').show();
             $(div).find('label[for="connpassword"]').show();
             $(div).find('label[for="driver"]').show();
             $(div).find('label[for="jdbcurl"]').show();
-			$(div).find('.horridbr').show();
-
-			$(div).find('label[for="schemapath"]').show();
-			$(div).find('label[for="driver"]').show();
-
-			break;
+            break;
     }
 });
 

@@ -1,4 +1,4 @@
-/*
+/*  
  *   Copyright 2012 OSBI Ltd
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
+ 
 /**
  * Object which handles authentication and stores connections and cubes
  * @param username
@@ -26,7 +26,7 @@ var Session = Backbone.Model.extend({
     sessionid: null,
     upgradeTimeout: null,
     isAdmin: false,
-    id: null,
+        
     initialize: function(args, options) {
         // Attach a custom event bus to this model
         _.extend(this, Backbone.Events);
@@ -38,7 +38,7 @@ var Session = Backbone.Model.extend({
             if (!Settings.DEMO) {
                 this.save({username:this.username, password:this.password},{success: this.check_session, error: this.check_session});
             } else {
-                this.check_session();
+                this.check_session();    
             }
 
         } else {
@@ -49,22 +49,12 @@ var Session = Backbone.Model.extend({
     check_session: function() {
         if (this.sessionid === null || this.username === null || this.password === null) {
             this.clear();
-            this.fetch({ success: this.process_session, error: this.show_error });
+            this.fetch({ success: this.process_session });
         } else {
             this.username = encodeURIComponent(options.username);
             this.load_session();
         }
     },
-
-	show_error: function(model, response){
-
-		// Open form and retrieve credentials
-		Saiku.ui.unblock();
-		this.form = new SessionErrorModal({ issue: response.responseText });
-		this.form.render().open();
-
-
-	},
 
     load_session: function() {
         this.sessionworkspace = new SessionWorkspace();
@@ -92,25 +82,25 @@ var Session = Backbone.Model.extend({
             }
             this.load_session();
         }
-
+        
         return this;
     },
-
+    
     error: function() {
         $(this.form.el).dialog('open');
     },
-
+    
     login: function(username, password) {
         var that = this;
         this.save({username:username, password:password},{dataType: "text", success: this.check_session, error: function(model, response){
             that.login_failed(response.responseText);
         }});
-
+        
     },
     login_failed: function(response){
         this.form = new LoginForm({ session: this });
         this.form.render().open();
-        this.form.setError(response);
+        this.form.setMessage(response);
     },
     logout: function() {
         // FIXME - This is a hack (inherited from old UI)
@@ -125,14 +115,11 @@ var Session = Backbone.Model.extend({
             localStorage.clear();
         }
 
-        this.set('id', _.uniqueId('queryaction_'));
-        this.destroy({async: false });
-
+        this.id = _.uniqueId('queryaction_');
         this.clear();
         this.sessionid = null;
         this.username = null;
         this.password = null;
-		this.roles = null;
         this.isAdmin = false;
         this.destroy({async: false });
         //console.log("REFRESH!");
