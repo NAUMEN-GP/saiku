@@ -196,10 +196,6 @@
         <dependency>
             <groupId>pentaho</groupId>
             <artifactId>mondrian</artifactId>
-<<<<<<< HEAD
-=======
-            <version>3.6.5</version>
->>>>>>> update mondrian version
             <exclusions>
                 <exclusion>
                     <groupId>javax.servlet</groupId>
