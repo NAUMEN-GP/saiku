@@ -16,8 +16,8 @@
         <module>saiku-core</module>
         <module>saiku-ui</module>
         <module>saiku-webapp</module>
-        <module>saiku-server</module>
-        <module>saiku-bi-platform-plugin-p5</module>
+        <!-- <module>saiku-server</module>
+        <module>saiku-bi-platform-plugin-p5</module> -->
     </modules>
     <distributionManagement>
         <repository>
@@ -112,7 +112,7 @@
     </pluginRepositories>
     <build>
         <plugins>
-            <plugin>
+<!--            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <executions>
@@ -133,6 +133,7 @@
                     </execution>
                 </executions>
             </plugin>
+-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -241,7 +242,7 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>2.12.1</version>
                 </plugin>
-                <plugin>
+<!--                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <executions>
@@ -262,6 +263,7 @@
                         </execution>
                     </executions>
                 </plugin>
+-->
             </plugins>
         </pluginManagement>
     </build>
