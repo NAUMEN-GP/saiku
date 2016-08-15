@@ -239,7 +239,8 @@
 
     <Dimension name='Time' table='time_by_day' type='TIME' key='Time Id'>
         <Attributes>
-            <Attribute name='Year' keyColumn='the_year' levelType='TimeYears' hasHierarchy='false'>
+            <Attribute name='Year'
+                       caption='Year' keyColumn='the_year' levelType='TimeYears' hasHierarchy='false'>
             </Attribute>
             <Attribute name='Quarter' levelType='TimeQuarters' hasHierarchy='false'>
                 <Key>
@@ -474,7 +475,7 @@
                         </Name>
                     </Attribute>
                     <Attribute name='Name' keyColumn='customer_id' nameColumn='full_name' orderByColumn='full_name' hasHierarchy='false'/>
-                    <Attribute name='Gender' keyColumn='gender'/>
+                    <Attribute name='Gender' keyColumn='gender' datatype="Boolean"/>
                     <Attribute name='Marital Status' keyColumn='marital_status' approxRowCount='111'/>
                     <Attribute name='Education' keyColumn='education' hasHierarchy='false'/>
                     <Attribute name='Yearly Income' keyColumn='yearly_income' hierarchyAllMemberName='All Yearly Incomes'/>
@@ -731,7 +732,11 @@
                     </Hierarchy>
                 </Hierarchies>
             </Dimension>
-
+            <Dimension name="Actual VS Budget" hanger="true">
+                <Attributes>
+                    <Attribute name="Type"/>
+                </Attributes>
+            </Dimension>
             <Dimension name='Department' table='department' key='Department Description'>
                 <Attributes>
                     <Attribute name='Department Description' keyColumn='department_id'/>
@@ -809,7 +814,13 @@
             <CalculatedMember name='Avg Salary' dimension='Measures'
                               formatString='Currency'
                               formula='[Measures].[Org Salary]/[Measures].[Number of Employees]'/>
+	    <CalculatedMember name="Test" hierarchy="[Store].[Stores]" formula="[Store].[Stores].[All Stores]"/>
         </CalculatedMembers>
+        <CalculatedMember hierarchy="[Actual VS Budget].[Type]" name="Actual">
+            <Formula>
+                [Store].[Stores].[All Stores]
+            </Formula>
+        </CalculatedMember>
     </Cube>
 
     <!-- Cubes for compatibility with old FoodMart. Will put them
@@ -926,5 +937,7 @@
             <CubeGrant cube='HR' access='none'/>
         </SchemaGrant>
     </Role>
-
+    <Role name='No Cubes'>
+	<SchemaGrant access='none'/>
+    </Role>
 </Schema>

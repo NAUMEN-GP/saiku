@@ -1,18 +1,19 @@
 package org.saiku.plugin.util;
 
+import org.saiku.datasources.connection.ISaikuConnection;
+
+import org.olap4j.OlapConnection;
+
 import java.sql.Connection;
 import java.util.Properties;
 
 import mondrian.rolap.RolapConnection;
 
-import org.olap4j.OlapConnection;
-import org.saiku.datasources.connection.ISaikuConnection;
-
 public class SaikuReadyOlapConnection implements ISaikuConnection {
 
-	private String name;
+	private final String name;
 	private boolean initialized = false;
-	private OlapConnection olapConnection;
+	private final OlapConnection olapConnection;
 	private String username;
 	private String password;
 
@@ -63,7 +64,11 @@ public class SaikuReadyOlapConnection implements ISaikuConnection {
 		return name;
 	}
 
-	public void setProperties(Properties props) {
+  public Properties getProperties() {
+    return null;
+  }
+
+  public void setProperties(Properties props) {
 		// TODO Auto-generated method stub
 		
 	}

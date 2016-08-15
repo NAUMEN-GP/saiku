@@ -82,9 +82,17 @@ var Query = Backbone.Model.extend({
         this.workspace.trigger('query:run');
         this.result.result = null;
         var validated = false;
-        var errorMessage = "Query Validation failed!";
+        var errorMessage = '<span class="i18n">Query Validation failed!</span>';
 
         var exModel = this.helper.model();
+		for(var k in this.attributes) {
+			var att = this.attributes[k];
+			if(k.substring(0,5)==="PARAM"){
+				var p = k.substring(5, k.length);
+				exModel.parameters[p] = att;
+			}
+
+		}
         if (exModel.queryType == "OLAP") {
             if (exModel.type == "QUERYMODEL") {
                 var columnsOk = Object.keys(exModel.queryModel.axes.COLUMNS.hierarchies).length > 0;
@@ -158,3 +166,5 @@ var Query = Backbone.Model.extend({
         return "api/query/" + encodeURI(this.uuid);
     }
 });
+
+

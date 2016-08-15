@@ -6,7 +6,6 @@ import org.apache.commons.vfs.VFS;
 import org.saiku.datasources.datasource.SaikuDatasource;
 import org.saiku.repository.IRepositoryManager;
 import org.saiku.service.datasource.IDatasourceManager;
-import org.saiku.service.datasource.RepositoryDatasourceManager;
 import org.saiku.service.importer.LegacyImporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,7 +104,7 @@ public class LegacyImporterImpl implements LegacyImporter {
                                         split[i] = fixedString;
                                         StringBuilder builder = new StringBuilder();
                                         for(String str : split){
-                                            builder.append(str+";");
+                                            builder.append(str).append(";");
                                         }
                                         props.setProperty("location", builder.toString());
 
@@ -175,22 +174,6 @@ public class LegacyImporterImpl implements LegacyImporter {
         String strUnzipped = "";
         while(ze!=null){
 
-           /* String fileName = ze.getName();
-            File newFile = new File(fileName);
-
-            System.out.println("file unzip : "+ newFile.getAbsoluteFile());
-
-            byte[] bytes= new byte[2048];
-            try {
-                zis.read(bytes, 0, 2048);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                strUnzipped= new String( bytes, "UTF-8" );
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }*/
             String fileName = ze.getName();
             int size;
             byte[] buffer = new byte[2048];

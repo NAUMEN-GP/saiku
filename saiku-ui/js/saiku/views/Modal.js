@@ -1,5 +1,3 @@
-//goog.provide('saiku.views.Modal');
-
 /*
  *   Copyright 2012 OSBI Ltd
  *
@@ -47,7 +45,7 @@ var Modal = Backbone.View.extend({
                 "<div class='dialog_body'><%= message %></div>" +
         		"<div class='dialog_footer'>" +
             "<% _.each(buttons, function(button) { %>" +
-                "<a class='form_button i18n' href='#<%= button.method %>'>&nbsp;<%= button.text %>&nbsp;</a>" +
+                "<a class='form_button btn btn-default i18n' href='#<%= button.method %>'>&nbsp;<%= button.text %>&nbsp;</a>" +
             "<% }); %>" +
             "<div class='dialog_response'></div>"+
             "</div>")(this);
@@ -57,7 +55,6 @@ var Modal = Backbone.View.extend({
         _.extend(this, args);
         _.bindAll(this, "call");
         _.extend(this, Backbone.Events);
-
     },
 
     render: function() {
@@ -96,3 +93,13 @@ var Modal = Backbone.View.extend({
         return false;
     }
 });
+
+/* jQuery UI - v1.10.2 - 2013-12-12  (and later)
+ * http://bugs.jqueryui.com/ticket/9087#comment:30
+ * http://bugs.jqueryui.com/ticket/9087#comment:27 - bugfix
+ * http://bugs.jqueryui.com/ticket/4727#comment:23 - bugfix
+ * allowInteraction fix
+ */
+$.ui.dialog.prototype._allowInteraction = function(event) {
+    return !!$(event.target).closest('.ui-dialog, .ui-datepicker, .sp-input').length;
+};

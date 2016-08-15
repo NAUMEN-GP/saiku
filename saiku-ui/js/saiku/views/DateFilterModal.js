@@ -23,7 +23,9 @@ var DateFilterModal = Modal.extend({
 	buttons: [
 		{ text: 'Clear', method: 'clear_date_filter' },
 		{ text: 'Save', method: 'save' },
-		{ text: 'Cancel', method: 'finished' }
+		{ text: 'Open Standard Filter', method: 'open_standard_filter' },
+		{ text: 'Cancel', method: 'finished' },
+        { text: 'Help', method: 'help' }
 	],
 
 	events: {
@@ -39,7 +41,10 @@ var DateFilterModal = Modal.extend({
 
 	template_many_years_mdx: ' {logicalOperator} {parent}.CurrentMember.NAME {comparisonOperator} \'{dates}\'',
 
-	template_mdx: '{parent} CurrentDateMember([{dimension}.{hierarchy}], \'["{dimension}.{hierarchy}"]\\\.{analyzerDateFormat}\', EXACT)',
+	template_mdx: 'IIF(ISEMPTY(CurrentDateMember([{dimension}.{hierarchy}],' +
+	' \'["{dimension}.{hierarchy}"]\\\.{analyzerDateFormat}\', EXACT)), {}, { {parent}' +
+	' CurrentDateMember([{dimension}.{hierarchy}],' +
+	' \'["{dimension}.{hierarchy}"]\\\.{analyzerDateFormat}\', EXACT)})',
 
 	template_last_mdx: '{parent} LastPeriods({periodAmount}, CurrentDateMember([{dimension}.{hierarchy}], \'["{dimension}.{hierarchy}"]\\\.{analyzerDateFormat}\', EXACT))',
 
@@ -52,48 +57,48 @@ var DateFilterModal = Modal.extend({
 				'<span class="i18n">Operator:</span><br>' +
 				'<div class="selection-options">' +
 					'<div class="form-group-selection">' +
-						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-equals" value="=" data-operator="equals"> Equals</label>' +
+						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-equals" value="=" data-operator="equals"> <span class="i18n">Equals</span></label>' +
 					'</div>' +
 					'<div class="form-group-selection">' +
-						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-after" value=">" data-operator="after"> After</label>' +
+						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-after" value=">" data-operator="after"> <span class="i18n">After</span></label>' +
 					'</div>' +
 					'<div class="form-group-selection">' +
-						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-before" value="<" data-operator="before"> Before</label>' +
+						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-before" value="<" data-operator="before"> <span class="i18n">Before</span></label>' +
 					'</div>' +
 					'<div class="form-group-selection">' +
-						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-between" value=">=|<=" data-operator="between"> Between</label><br>' +
+						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-between" value=">=|<=" data-operator="between"> <span class="i18n">Between</span></label><br>' +
 					'</div>' +
 					'<div class="form-group-selection">' +
-						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-different" value="<>" data-operator="different"> Different</label>' +
+						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-different" value="<>" data-operator="different"> <span class="i18n">Different</span></label>' +
 					'</div>' +
 					'<div class="form-group-selection">' +
-						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-after-equals" value=">=" data-operator="after&equals"> After&Equals</label>' +
+						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-after-equals" value=">=" data-operator="after&equals"> <span class="i18n">After&amp;Equals</span></label>' +
 					'</div>' +
 					'<div class="form-group-selection">' +
-						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-before-equals" value="<=" data-operator="before&equals"> Before&Equals</label>' +
+						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-before-equals" value="<=" data-operator="before&equals"> <span class="i18n">Before&amp;Equals</span></label>' +
 					'</div>' +
 					'<div class="form-group-selection">' +
-						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-notbetween" value=">=||<=" data-operator="notbetween"> Not Between</label><br>' +
+						'<label><input type="radio" name="operator-radio" class="operator-radio" id="op-notbetween" value=">=||<=" data-operator="notbetween"> <span class="i18n">Not Between</span></label><br>' +
 					'</div>' +
 					'<div class="inline-form-group">' +
 						'<div class="form-group" id="div-selection-date" hidden>' +
-							'<label>Select a date:</label>' +
+							'<label class="i18n">Select a date:</label>' +
 							'<input type="text" class="selection-date" id="selection-date" placeholder="Choose a date">' +
-							'<a class="form_button" id="add-date">add</a>' +
+							'<a class="form_button i18n" id="add-date">add</a>' +
 						'</div>' +
 						'<div class="form-group" id="div-selected-date" hidden>' +
 							'<fieldset>' +
-								'<legend>Selected date:</legend>' +
+								'<legend class="i18n">Selected date:</legend>' +
 								'<ul id="selected-date"></ul>' +
 							'</fieldset>' +
 						'</div>' +
 					'</div>' +
 					'<div class="form-group" id="div-select-start-date" hidden>' +
-						'<label>Select a start date:</label>' +
+						'<label class="i18n">Select a start date:</label>' +
 						'<input type="text" class="selection-date" id="start-date" placeholder="Choose a date">' +
 					'</div>' +
 					'<div class="form-group" id="div-select-end-date" hidden>' +
-						'<label>Select an end date:</label>' +
+						'<label class="i18n">Select an end date:</label>' +
 						'<input type="text" class="selection-date" id="end-date" placeholder="Choose a date">' +
 					'</div>' +
 				'</div>' +
@@ -106,12 +111,24 @@ var DateFilterModal = Modal.extend({
 			'<div class="available-selections" selection-name="fixed-date" available="false">' +
 				'<span class="i18n">Fixed Date:</span><br>' +
 				'<div class="selection-options">' +
-					'<label><input type="radio" name="fixed-radio" id="fd-yesterday"> Yesterday</label>' +
-					'<label><input type="radio" name="fixed-radio" id="fd-today"> Today</label>' +
-					'<label><input type="radio" name="fixed-radio" id="fd-week"> Current Week</label>' +
-					'<label><input type="radio" name="fixed-radio" id="fd-month"> Current Month</label>' +
-					'<label><input type="radio" name="fixed-radio" id="fd-quarter"> Current Quarter</label><br>' +
-					'<label><input type="radio" name="fixed-radio" id="fd-year"> Current Year</label>' +
+					'<div class="form-group-selection">' +
+						'<label><input type="radio" name="fixed-radio" id="fd-yesterday" data-leveltype="TIME_DAYS"> <span class="i18n">Yesterday</span></label>' +
+					'</div>' +
+					'<div class="form-group-selection">' +
+						'<label><input type="radio" name="fixed-radio" id="fd-today" data-leveltype="TIME_DAYS"> <span class="i18n">Today</span></label>' +
+					'</div>' +
+					'<div class="form-group-selection">' +
+						'<label><input type="radio" name="fixed-radio" id="fd-week" data-leveltype="TIME_WEEKS"> <span class="i18n">Current Week</span></label>' +
+					'</div>' +
+					'<div class="form-group-selection">' +
+						'<label><input type="radio" name="fixed-radio" id="fd-month" data-leveltype="TIME_MONTHS"> <span class="i18n">Current Month</span></label>' +
+					'</div>' +
+					'<div class="form-group-selection">' +
+						'<label><input type="radio" name="fixed-radio" id="fd-quarter" data-leveltype="TIME_QUARTERS"> <span class="i18n">Current Quarter</span></label><br>' +
+					'</div>' +
+					'<div class="form-group-selection">' +
+						'<label><input type="radio" name="fixed-radio" id="fd-year" data-leveltype="TIME_YEARS"> <span class="i18n">Current Year</span></label>' +
+					'</div>' +
 				'</div>' +
 			'</div>' +
 		'</div>' +
@@ -122,21 +139,21 @@ var DateFilterModal = Modal.extend({
 			'<div class="available-selections" selection-name="rolling-date" available="false">' +
 				'<span class="i18n">Rolling Date:</span><br>' +
 				'<div class="selection-options">' +
-					'<div class="form-group-selection">' +
+					'<div class="form-group-rolling">' +
 						'<select>' +
-							'<option value="last">Last</option>' +
-							'<option value="next" disabled class="keep-disabled">Next</option>' +
+							'<option class="i18n" value="last">Last</option>' +
+							'<option class="keep-disabled i18n" value="next" disabled>Next</option>' +
 						'</select>' +
 					'</div>' +
-					'<div class="form-group-selection">' +
+					'<div class="form-group-rolling">' +
 						'<input type="text" id="date-input">' +
 					'</div>' +
-					'<div class="form-group-selection">' +
+					'<div class="form-group-rolling">' +
 						'<select id="period-select">' +
-							'<option name="TIME_DAYS" id="rd-days">Day(s)</option>' +
-							'<option name="TIME_WEEKS" id="rd-weeks">Week(s)</option>' +
-							'<option name="TIME_MONTHS" id="rd-months">Month(s)</option>' +
-							'<option name="TIME_YEARS" id="rd-years">Year(s)</option>' +
+							'<option name="TIME_DAYS" class="i18n" id="rd-days">Day(s)</option>' +
+							'<option name="TIME_WEEKS" class="i18n" id="rd-weeks">Week(s)</option>' +
+							'<option name="TIME_MONTHS" class="i18n" id="rd-months">Month(s)</option>' +
+							'<option name="TIME_YEARS" class="i18n" id="rd-years">Year(s)</option>' +
 						'</select>' +
 					'</div>' +
 				'</div>' +
@@ -170,6 +187,7 @@ var DateFilterModal = Modal.extend({
 		// show/hide button for clear filter
 		if (this.show_button_clear()) {
 			this.$el.find('.dialog_footer a:nth-child(1)').show();
+			this.$el.find('.dialog_footer a:nth-child(3)').hide();
 		}
 		else {
 			this.$el.find('.dialog_footer a:nth-child(1)').hide();
@@ -202,6 +220,36 @@ var DateFilterModal = Modal.extend({
 
 		// Populate date filter
 		this.populate();
+
+		// Translate
+		Saiku.i18n.translate();
+	},
+
+    help: function(event) {
+        event.preventDefault();
+        window.open('http://wiki.meteorite.bi/display/SAIK/Advanced+Date+Filtering');
+    },
+
+	open_standard_filter: function(event) {
+		event.preventDefault();
+
+    	// Launch selections dialog
+    	(new SelectionsModal({
+    		source: 'DateFilterModal',
+		    target: this.target,
+		    name: this.name,
+		    key: this.key,
+		    objDateFilter: {
+		        dimension: this.dimension,
+		        hierarchy: this.hierarchy,
+		        data: this.data,
+		        analyzerDateFormat: this.analyzerDateFormat,
+		        dimHier: this.dimHier
+		    },
+		    workspace: this.workspace
+		})).open();
+
+		this.$el.dialog('destroy').remove();
 	},
 
 	post_render: function(args) {
@@ -311,9 +359,9 @@ var DateFilterModal = Modal.extend({
 		this.$el.find('.available-selections').each(function(key, selection) {
 			if ($(selection).attr('selection-name') === 'fixed-date') {
 				$(selection).find('input:radio').each(function(key, radio) {
-					var name = $(radio).attr('id').split('-')[1];
+					var name = $(radio).data('leveltype');
 					_.find(self.dataLevels, function(value, key) {
-						if (name === value.name.toLowerCase()) {
+						if (name === value.levelType) {
 							$(radio).val(self.dataLevels[key].analyzerDateFormat);
 						}
 						else if ((name === 'yesterday' || name === 'today') &&

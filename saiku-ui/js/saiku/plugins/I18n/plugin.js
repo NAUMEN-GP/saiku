@@ -31,13 +31,20 @@ Saiku.i18n = {
     automatic_i18n: function () {
         // Load language file if it isn't English
 
+        var paramsURI = Saiku.URLParams.paramsURI();
+
         // compatible 'zh-CN' -> 'zh';
         if (Saiku.i18n.locale == 'zh') {
             Saiku.i18n.locale = 'cn';
         }
         // Load language file if edit in Settings.js
         else if (Settings.I18N_LOCALE !== 'en') {
-            Saiku.i18n.locale = Settings.I18N_LOCALE;   
+            Saiku.i18n.locale = Settings.I18N_LOCALE;
+        }
+        // Load language file if add a parameter `lang` in URL. 
+        // for example: ?lang=cn
+        else if (_.has(paramsURI, 'lang')) {
+            Saiku.i18n.locale = paramsURI['lang'];
         }
 
         if (Saiku.i18n.locale != "en") {
@@ -104,8 +111,10 @@ function recursive_menu_translate(object, po_file) {
 		// Iterate over UI elements that need to be translated
 		return $.each(this, function() {
 			element = $(this);
-			
 			// Translate text
+            if(element.html === undefined && element.attr('title') === undefined && element.attr('value') === undefined) {
+                debugger;
+            }
 			if (element.html()) {
 				translated_text = translate( element.html(), po_file );
                 if (Saiku.i18n.elements.indexOf &&
@@ -121,6 +130,8 @@ function recursive_menu_translate(object, po_file) {
 			
 			// Translate title
 			if (element.attr('title')) {
+                // console.log("title:" + element.attr('title'));
+
 				translated_title = translate( element.attr('title'), po_file );
                 if (Saiku.i18n.elements.indexOf && 
                     Saiku.i18n.elements.indexOf(element.attr('title')) === -1) {
@@ -132,9 +143,27 @@ function recursive_menu_translate(object, po_file) {
 					element.removeClass('i18n');
 				}
 			}
+
+
+
+            // Translate title
+            if (element.attr('original-title')) {
+                // console.log("original-title:" + element.attr('original-title'));
+                translated_title = translate( element.attr('original-title'), po_file );
+                if (Saiku.i18n.elements.indexOf &&
+                    Saiku.i18n.elements.indexOf(element.attr('original-title')) === -1) {
+                    Saiku.i18n.elements.push(element.attr('original-title'));
+                }
+                if (translated_title) {
+                    element.data('original', element.attr('original-title'));
+                    element.attr({ 'title': translated_title });
+                    element.removeClass('i18n');
+                }
+            }
 			
 			if (element.attr('value')) {
-				translated_value = translate( element.attr('value'), po_file );
+                // console.log("value:" + element.attr('value'));
+                translated_value = translate( element.attr('value'), po_file );
                 if (Saiku.i18n.elements.indexOf && 
                     Saiku.i18n.elements.indexOf(element.attr('value')) === -1) {
                     Saiku.i18n.elements.push(element.attr('value'));
@@ -265,7 +294,7 @@ Saiku.events.bind('session:new', function() {
     /** 
      * Add translate button
      */
-    if (Saiku.i18n.locale != "en") {
+    if (Saiku.i18n.locale != "en" && Saiku.session.isAdmin) {
         var $link = $("<a />").text(Saiku.i18n.locale)
             .attr({ 
                 href: "#translate",
@@ -274,7 +303,7 @@ Saiku.events.bind('session:new', function() {
             .click(Saiku.i18n.improve_translation)
             .addClass('sprite translate i18n');
         var $li = $("<li />").append($link);
-        $(Saiku.toolbar.el).find('ul').append($li);
+        $(Saiku.toolbar.el).find('ul').append($li).append('<li class="separator">&nbsp;</li>');
     }
 
 });

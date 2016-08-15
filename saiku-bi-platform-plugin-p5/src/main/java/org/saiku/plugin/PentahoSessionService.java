@@ -15,20 +15,27 @@
  */
 package org.saiku.plugin;
 
+import org.saiku.plugin.util.PentahoAuditHelper;
 import org.saiku.service.ISessionService;
+import org.saiku.service.user.UserService;
 
+import org.pentaho.platform.util.logging.SimpleLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.Authentication;
 import org.springframework.security.AuthenticationManager;
 import org.springframework.security.BadCredentialsException;
 import org.springframework.security.GrantedAuthority;
 import org.springframework.security.context.SecurityContextHolder;
-import org.springframework.security.Authentication;
 import org.springframework.security.providers.UsernamePasswordAuthenticationToken;
 import org.springframework.security.ui.WebAuthenticationDetails;
 import org.springframework.security.userdetails.User;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -40,10 +47,14 @@ public class PentahoSessionService implements ISessionService {
 
 	private AuthenticationManager authenticationManager;
 
+	private final Map<Object,Map<String,Object>> sessionHolder = new HashMap<Object,Map<String,Object>>();
+  private UserService userService;
 
-	Map<Object,Map<String,Object>> sessionHolder = new HashMap<Object,Map<String,Object>>();
+  public void setUserService(UserService us) {
+	userService = us;
+  }
 
-
+	private final PentahoAuditHelper pah = new PentahoAuditHelper();
 	/* (non-Javadoc)
 	 * @see org.saiku.web.service.ISessionService#setAuthenticationManager(org.springframework.security.authentication.AuthenticationManager)
 	 */
@@ -55,6 +66,10 @@ public class PentahoSessionService implements ISessionService {
 	 * @see org.saiku.web.service.ISessionService#login(javax.servlet.http.HttpServletRequest, java.lang.String, java.lang.String)
 	 */
 	public Map<String, Object> login(HttpServletRequest req, String username, String password ) {
+	  pah.startAudit("Saiku", "Login", this.getClass().getName(), this.toString(), this.toString(), null, new
+		  SimpleLogger(
+		  PentahoSessionService.class
+			  .getName()));
 		if (authenticationManager != null) {
 			authenticate(req, username, password);
 		}
@@ -63,28 +78,41 @@ public class PentahoSessionService implements ISessionService {
 			populateSession(p, username, password);
 			return sessionHolder.get(p);
 		}
+
+
 		return new HashMap<String, Object>();
 	}
 
 	private void populateSession(Object key) {
+
+	  String username;
+	  if (key instanceof User) {
+		User u = (User) key;
+		username = u.getUsername();
+	  }
+	  else {
+		username = "existinguser";
+	  }
+	  String sessionId =UUID.randomUUID().toString();
+
+	  UUID uuid = pah.startAudit("Saiku", "Login", this.getClass().getName(), username, sessionId, username +
+																								 " Attempted "
+																							+ "Login",
+		  getLogger());
 		if (!sessionHolder.containsKey(key)) {
 			sessionHolder.put(key, new HashMap<String,Object>());
 		}
-		sessionHolder.get(key).put("sessionid", UUID.randomUUID().toString());
+		sessionHolder.get(key).put("sessionid", sessionId);
 		List<String> roles = new ArrayList<String>();
 		for (GrantedAuthority ga : SecurityContextHolder.getContext().getAuthentication().getAuthorities()) {
 			roles.add(ga.getAuthority());
 		}
 		sessionHolder.get(key).put("roles", roles);
-		String username;
-		if (key instanceof User) {
-			User u = (User) key;
-			username = u.getUsername();
-		}
-		else {
-			username = "existinguser";
-		}
+
+		sessionHolder.get(key).put("isadmin", userService.isAdmin());
 		sessionHolder.get(key).put("username", username);
+	  	pah.endAudit("Saiku", "Login", this.getClass().getName(), username, sessionId, getLogger(),
+			(long) 1, uuid, (long) 1);
 	}
 
 	private void populateSession(Object key, String username, String password) {
@@ -98,6 +126,8 @@ public class PentahoSessionService implements ISessionService {
 	 * @see org.saiku.web.service.ISessionService#logout(javax.servlet.http.HttpServletRequest)
 	 */
 	public void logout(HttpServletRequest req) {
+	  UUID uuid = pah.startAudit("Saiku", "Logout", this.getClass().getName(), null, null, "Attempted Logout", getLogger
+		  ());
 		if (SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
 			Object p = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			if (sessionHolder.containsKey(p)) {
@@ -107,6 +137,8 @@ public class PentahoSessionService implements ISessionService {
 		SecurityContextHolder.clearContext(); 
 		HttpSession session= req.getSession(true); 
 		session.invalidate();
+	  pah.endAudit("Saiku", "Logout Successful", this.getClass().getName(), null, this.getSession().toString(),
+		  getLogger(), (long) 1, uuid, (long) 1);
 	}
 
 	/* (non-Javadoc)
@@ -130,6 +162,7 @@ public class PentahoSessionService implements ISessionService {
 	 * @see org.saiku.web.service.ISessionService#getSession(javax.servlet.http.HttpServletRequest)
 	 */
 	public Map<String,Object> getSession() {
+
 		if (SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {			
 			Object p = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			if (!sessionHolder.containsKey(p)) {
@@ -142,6 +175,7 @@ public class PentahoSessionService implements ISessionService {
 			}
 			return r;
 		}
+
 		return new HashMap<String,Object>();
 	}
 	
@@ -160,6 +194,25 @@ public class PentahoSessionService implements ISessionService {
 		}
 		return new HashMap<String,Object>();
 	}
+
+  public void clearSessions(HttpServletRequest req, String username, String password) {
+	if (authenticationManager != null) {
+	  authenticate(req, username, password);
+	}
+	if (SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
+	  Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	  Object p = auth.getPrincipal();
+	  if (sessionHolder.containsKey(p)) {
+		sessionHolder.remove(p);
+	  }
+	}
+  }
+
+  private SimpleLogger getLogger(){
+	return new SimpleLogger(
+		PentahoSessionService.class
+			.getName());
+  }
 
 
 }

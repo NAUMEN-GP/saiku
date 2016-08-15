@@ -76,7 +76,7 @@ public abstract class AbstractConnectionManager implements IConnectionManager, S
       if (connections != null) {
           connections.clear();
       }
-      System.out.println( "Do we still have connections? : " + getAllOlapConnections().size() );
+    log.info("Do we still have connections? : " + getAllOlapConnections().size());
   }
 
   private SaikuDatasource preProcess( SaikuDatasource datasource ) {
@@ -126,7 +126,7 @@ public abstract class AbstractConnectionManager implements IConnectionManager, S
   }
 
   public ISaikuConnection getConnection( String name ) throws SaikuOlapException {
-    SaikuDatasource datasource = ds.getDatasource( name );
+    SaikuDatasource datasource = ds.getDatasource( name, false );
     datasource = preProcess( datasource );
     ISaikuConnection con = getInternalConnection( name, datasource );
     con = postProcess( datasource, con );
@@ -153,7 +153,7 @@ public abstract class AbstractConnectionManager implements IConnectionManager, S
   }
 
   public Map<String, ISaikuConnection> getAllConnections() throws SaikuOlapException {
-    Map<String, ISaikuConnection> resultDs = new HashMap<String, ISaikuConnection>();
+    Map<String, ISaikuConnection> resultDs = new HashMap<>();
     for ( String name : ds.getDatasources().keySet() ) {
       ISaikuConnection con = getConnection( name );
       if ( con != null ) {
@@ -171,12 +171,15 @@ public abstract class AbstractConnectionManager implements IConnectionManager, S
         return (OlapConnection) o;
       }
     }
+    else{
+
+    }
     return null;
   }
 
   public Map<String, OlapConnection> getAllOlapConnections() throws SaikuOlapException {
     Map<String, ISaikuConnection> connections = getAllConnections();
-    Map<String, OlapConnection> ocons = new HashMap<String, OlapConnection>();
+    Map<String, OlapConnection> ocons = new HashMap<>();
     for ( ISaikuConnection con : connections.values() ) {
       Object o = con.getConnection();
       if ( o != null && o instanceof OlapConnection ) {
@@ -187,7 +190,7 @@ public abstract class AbstractConnectionManager implements IConnectionManager, S
     return ocons;
   }
 
-  public boolean isDatasourceSecurity( SaikuDatasource datasource, String value ) {
+  protected boolean isDatasourceSecurity(SaikuDatasource datasource, String value) {
     if ( datasource != null && value != null ) {
       Properties props = datasource.getProperties();
       if ( props != null && isDatasourceSecurityEnabled( datasource ) ) {
@@ -199,7 +202,7 @@ public abstract class AbstractConnectionManager implements IConnectionManager, S
     return false;
   }
 
-  public boolean isDatasourceSecurityEnabled( SaikuDatasource datasource ) {
+  protected boolean isDatasourceSecurityEnabled(SaikuDatasource datasource) {
     if ( datasource != null ) {
       Properties props = datasource.getProperties();
       if ( props != null && props.containsKey( ISaikuConnection.SECURITY_ENABLED_KEY ) ) {

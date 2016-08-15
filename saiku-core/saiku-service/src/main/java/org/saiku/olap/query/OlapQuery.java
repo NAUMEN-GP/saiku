@@ -15,35 +15,6 @@
  */
 package org.saiku.olap.query;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-
-import mondrian.rolap.RolapConnection;
-
-import org.apache.commons.lang.StringUtils;
-import org.olap4j.Axis;
-import org.olap4j.Axis.Standard;
-import org.olap4j.CellSet;
-import org.olap4j.OlapConnection;
-import org.olap4j.OlapStatement;
-import org.olap4j.Scenario;
-import org.olap4j.impl.IdentifierParser;
-import org.olap4j.mdx.ParseTreeWriter;
-import org.olap4j.mdx.SelectNode;
-import org.olap4j.metadata.Catalog;
-import org.olap4j.metadata.Cube;
-import org.olap4j.query.LimitFunction;
-import org.olap4j.query.Query;
-import org.olap4j.query.QueryAxis;
-import org.olap4j.query.QueryDimension;
-import org.olap4j.query.QueryDimension.HierarchizeMode;
-import org.olap4j.query.Selection;
-import org.olap4j.query.SortOrder;
 import org.saiku.olap.dto.SaikuCube;
 import org.saiku.olap.dto.SaikuTag;
 import org.saiku.olap.dto.filter.SaikuFilter;
@@ -55,8 +26,29 @@ import org.saiku.olap.util.exception.SaikuIncompatibleException;
 import org.saiku.olap.util.exception.SaikuOlapException;
 import org.saiku.olap.util.formatter.ICellSetFormatter;
 import org.saiku.service.util.exception.SaikuServiceException;
+
+import org.apache.commons.lang.StringUtils;
+import org.olap4j.*;
+import org.olap4j.Axis.Standard;
+import org.olap4j.impl.IdentifierParser;
+import org.olap4j.mdx.ParseTreeWriter;
+import org.olap4j.mdx.SelectNode;
+import org.olap4j.metadata.Catalog;
+import org.olap4j.metadata.Cube;
+import org.olap4j.query.*;
+import org.olap4j.query.QueryDimension.HierarchizeMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
+import mondrian.rolap.RolapConnection;
 
 
 public class OlapQuery implements IQuery {
@@ -65,11 +57,11 @@ public class OlapQuery implements IQuery {
 
     private static final String SCENARIO = "Scenario";
 
-    private Query query;
-    private Properties properties = new Properties();
-    private Map<String, String> totalsFunctions = new HashMap<String, String>();
+    private final Query query;
+    private final Properties properties = new Properties();
+    private final Map<String, String> totalsFunctions = new HashMap<>();
 
-    private SaikuCube cube;
+    private final SaikuCube cube;
 
     private Scenario scenario;
 
@@ -81,7 +73,7 @@ public class OlapQuery implements IQuery {
 
     private OlapStatement statement = null;
 
-    private OlapConnection connection;
+    private final OlapConnection connection;
 
     private ICellSetFormatter formatter;
 
@@ -201,7 +193,6 @@ public class OlapQuery implements IQuery {
                     String sortLiteral = qAxis.getSortIdentifierNodeName();
                     if (sortLiteral.startsWith(dimension.getDimension().getUniqueName()) || sortLiteral.startsWith("[" + dimension.getName())) {
                         qAxis.clearSort();
-                        // System.out.println("Removed Sort: " + qAxis.getLocation() + " - "+ sortLiteral);
                     }
                 }
             }
@@ -479,8 +470,7 @@ public class OlapQuery implements IQuery {
     }
 
     public String getTotalFunction(String uniqueLevelName) {
-        String retVal = totalsFunctions.get(uniqueLevelName);
-        return retVal;
+        return totalsFunctions.get(uniqueLevelName);
     }
 
     public Map<String, String> getTotalFunctions() {

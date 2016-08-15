@@ -80,6 +80,15 @@ public class ExporterResource {
 	}
 
 
+  /**
+   * Export query to excel file format.
+   * @summary Export to excel.
+   * @param file The file
+   * @param formatter The cellset formatter
+   * @param name The name
+   * @param servletRequest The servlet request.
+   * @return A response containing an excel file.
+   */
 	@GET
 	@Produces({"application/json" })
 	@Path("/saiku/xls")
@@ -100,7 +109,7 @@ public class ExporterResource {
 				tq.getParameters().putAll(parameters);
 			}
 		  if (StringUtils.isNotBlank(formatter)) {
-			HashMap<String, Object> p = new HashMap<String, Object>();
+			HashMap<String, Object> p = new HashMap<>();
 			p.put("saiku.olap.result.formatter", formatter);
 			if (tq.getProperties() == null) {
 			  tq.setProperties(p);
@@ -116,6 +125,14 @@ public class ExporterResource {
 		}
 	}
 
+  /**
+   * Export the query to a CSV file format.
+   * @summary Export to CSV.
+   * @param file The file
+   * @param formatter The cellset formatter
+   * @param servletRequest The servlet request
+   * @return A response containing a CSV file.
+   */
 	@GET
 	@Produces({"application/json" })
 	@Path("/saiku/csv")
@@ -137,7 +154,7 @@ public class ExporterResource {
 			}
 
 		  if (StringUtils.isNotBlank(formatter)) {
-			HashMap<String, Object> p = new HashMap<String, Object>();
+			HashMap<String, Object> p = new HashMap<>();
 			p.put("saiku.olap.result.formatter", formatter);
 			if (tq.getProperties() == null) {
 			  tq.setProperties(p);
@@ -153,6 +170,14 @@ public class ExporterResource {
 		}
 	}
 
+  /**
+   * Export the query response to JSON.
+   * @summary Export to JSON
+   * @param file The file
+   * @param formatter The cellset formatter
+   * @param servletRequest The servlet request
+   * @return A response containing a JSON query response.
+   */
 	@GET
 	@Produces({"application/json" })
 	@Path("/saiku/json")
@@ -173,7 +198,7 @@ public class ExporterResource {
 				tq.getParameters().putAll(parameters);
 			}
 		  if (StringUtils.isNotBlank(formatter)) {
-			HashMap<String, Object> p = new HashMap<String, Object>();
+			HashMap<String, Object> p = new HashMap<>();
 			p.put("saiku.olap.result.formatter", formatter);
 			if (tq.getProperties() == null) {
 			  tq.setProperties(p);
@@ -189,6 +214,17 @@ public class ExporterResource {
 		}
 	}
 
+  /**
+   * Export the current resultset to an HTML file.
+   * @summary Export to HTML
+   * @param file The file
+   * @param formatter The formatter
+   * @param css The css
+   * @param tableonly Table only, or include chart
+   * @param wrapcontent Wrap content
+   * @param servletRequest The servlet reaquest.
+   * @return A reponse containing the HTML export.
+   */
   @GET
   @Produces({"text/html" })
   @Path("/saiku/html")
@@ -212,6 +248,15 @@ public class ExporterResource {
 	}
   }
 
+  /**
+   * Export chart to a file.
+   * @summary Export Chart.
+   * @param type The export type (png, svg, jpeg)
+   * @param svg The SVG
+   * @param size The size
+   * @param name The name
+   * @return A reponse containing the chart export.
+   */
 	@POST
 	@Produces({"image/*" })
 	@Path("/saiku/chart")
@@ -280,7 +325,7 @@ public class ExporterResource {
 
 		  if(!type.equals("pdf")) {
 
-			PDDocument document = PDDocument.load(new ByteArrayInputStream(b), null);
+			PDDocument document = PDDocument.load(new ByteArrayInputStream(b), (String)null);
 
 			PDPageTree pdPages = document.getDocumentCatalog().getPages();
 			PDPage page = pdPages.get(0);
@@ -322,21 +367,19 @@ public class ExporterResource {
 	}
 
 
-  public static String getVersion() {
+  /**
+   * Get the version.
+   * @summary Get the Saiku version.
+   * @return A String containing the current version.
+   */
+  private static String getVersion() {
 	Properties prop = new Properties();
 	InputStream input = null;
 	String version = "";
 	ClassLoader classloader = Thread.currentThread().getContextClassLoader();
 	InputStream is = classloader.getResourceAsStream("org/saiku/web/rest/resources/version.properties");
 	try {
-
-	  //input = new FileInputStream("version.properties");
-
-	  // load a properties file
 	  prop.load(is);
-
-	  // get the property value and print it out
-	  System.out.println(prop.getProperty("VERSION"));
 	  version = prop.getProperty("VERSION");
 	} catch (IOException e) {
 	  e.printStackTrace();

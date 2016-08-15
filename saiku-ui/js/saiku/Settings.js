@@ -19,6 +19,7 @@
  */
 var Settings = {
     VERSION: "Saiku-${version}",
+    LICENSE: {},
     BIPLUGIN: false,
     BIPLUGIN5: false,
     BASE_URL: window.location.origin,
@@ -40,6 +41,7 @@ var Settings = {
         'saiku.olap.query.filter' : true,
         'saiku.olap.result.formatter' : "flattened"
     },
+    REPOSITORY_LAZY: false,
     TABLE_LAZY: true,          // Turn lazy loading off / on
     TABLE_LAZY_SIZE: 1000,     // Initial number of items to be rendered
     TABLE_LAZY_LOAD_ITEMS: 20,       // Additional item per scroll
@@ -65,7 +67,52 @@ var Settings = {
     TELEMETRY_SERVER: 'http://telemetry.analytical-labs.com:7000',
     LOCALSTORAGE_EXPIRATION: 10 * 60 * 60 * 1000 /* 10 hours, in ms */,
     UPGRADE: true,
-    EVALUATION_PANEL_LOGIN: true
+    EVALUATION_PANEL_LOGIN: true,
+    QUERY_OVERWRITE_WARNING: true,
+    MAPS: true,
+    MAPS_TYPE: 'OSM', // OSM || GMAPS
+    MAPS_TILE_LAYER: {
+        OSM: {
+            'map_marker': 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'map_heat': 'https://otile{s}-s.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.png'
+        },
+        GMAPS: {
+        }
+    },
+    MAPS_OPTIONS: {
+        OSM: {
+            maxZoom: 18,
+            attribution: '© <a href="http://osm.org/copyright" target="_blank">OpenStreetMap</a>'
+        },
+        GMAPS: {
+        }
+    },
+    MAPS_OSM_NOMINATIM: 'https://nominatim.openstreetmap.org/', // http://wiki.openstreetmap.org/wiki/Nominatim
+    DATA_SOURCES_LOOKUP: false,
+    DEFAULT_REPORT_SHOW: false, // true/false
+    DEFAULT_REPORTS: {
+        'admin': [
+            {
+                path: 'ADD_PATH1', // example: /homes/home:admin/chart.saiku
+                visible: false    // true/false
+            }
+        ],
+        '_': [
+            {
+                path: 'ADD_PATH2',
+                visible: false
+            }
+        ],
+        'ROLE_ADMIN': [
+            {
+                path: 'ADD_PATH3',
+                visible: false
+            }
+        ]
+    },
+    PARENT_MEMBER_DIMENSION: false,
+    EXT_DATASOURCE_PROPERTIES: false,
+    SHOW_USER_MANAGEMENT: true
 };
 
 /**
@@ -84,7 +131,13 @@ Settings.GET = function () {
         if (! isNaN(value)) value = parseInt(value);
         if (value === "true") value = true;
         if (value === "false") value = false;
-        params[decodeURIComponent(tokens[1]).toUpperCase()] = value;
+		if(decodeURIComponent(tokens[1].toUpperCase()).substring(0,5)==="PARAM"){
+			params["PARAM"+decodeURIComponent(tokens[1]).substring(5,decodeURIComponent(tokens[1]).length)] = value;
+		}
+		else{
+			params[decodeURIComponent(tokens[1]).toUpperCase()] = value;
+		}
+
         tokens = re.exec(qs);
     }
 
@@ -123,6 +176,11 @@ if (document.location.hash) {
     }
 }
 
+Settings.MONDRIAN_LOCALES = {
+    "English": "en_US",
+    "Dutch": "nl_BE",
+    "French": "fr_FR"
+};
 
 /**
  * < IE9 doesn't support Array.indexOf
@@ -146,6 +204,15 @@ if (!Array.prototype.indexOf)
     }
     return -1;
   };
+}
+
+/**
+ * IE9, 10 and 11 doesn't have window.location.origin
+ */
+if (!window.location.origin) {
+    window.location.origin = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+    // force update
+    Settings.BASE_URL = window.location.origin;
 }
 
 var tagsToReplace = {
@@ -172,7 +239,7 @@ if ($.blockUI) {
 
 }
 
-if (window.location.hostname && (window.location.hostname == "dev.analytical-labs.com" || window.location.hostname == "demo.analytical-labs.com" )) {
+if (window.location.hostname && (window.location.hostname == "try.meteorite.bi" )) {
     Settings.USERNAME = "admin";
     Settings.PASSWORD = "admin";
     Settings.DEMO = true;

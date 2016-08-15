@@ -6,6 +6,9 @@ import org.saiku.service.ISessionService;
 import org.saiku.service.datasource.DatasourceService;
 import org.saiku.service.datasource.IDatasourceManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,12 +20,13 @@ import java.util.List;
  */
 public class UserService implements IUserManager, Serializable {
 
-    JdbcUserDAO uDAO;
+    private JdbcUserDAO uDAO;
 
-    IDatasourceManager iDatasourceManager;
-    DatasourceService datasourceService;
+    private IDatasourceManager iDatasourceManager;
+    private DatasourceService datasourceService;
     private ISessionService sessionService;
     private List<String> adminRoles;
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     public void setAdminRoles( List<String> adminRoles ) {
         this.adminRoles = adminRoles;
@@ -68,7 +72,7 @@ public class UserService implements IUserManager, Serializable {
 
     public List<SaikuUser> getUsers() {
         Collection users = uDAO.findAllUsers();
-        List<SaikuUser> l = new ArrayList<SaikuUser>();
+        List<SaikuUser> l = new ArrayList<>();
         for (Object user : users) {
             l.add((SaikuUser) user);
 
@@ -101,8 +105,8 @@ public class UserService implements IUserManager, Serializable {
 
     }
 
-    public SaikuUser updateUser(SaikuUser u) {
-        SaikuUser user = uDAO.updateUser(u);
+    public SaikuUser updateUser(SaikuUser u, boolean updatepassword) {
+        SaikuUser user = uDAO.updateUser(u, updatepassword);
         uDAO.updateRoles(u);
 
         return user;
@@ -134,5 +138,24 @@ public class UserService implements IUserManager, Serializable {
 
     public List<String> getAdminRoles(){
         return adminRoles;
+    }
+
+    public String getActiveUsername() {
+        try {
+            return (String) sessionService.getSession().get("username");
+        } catch (Exception e) {
+            log.error("Could not fetch username");
+        }
+        return null;
+    }
+
+    @Override
+    public String getSessionId() {
+        try {
+            return (String) sessionService.getSession().get("sessionid");
+        } catch (Exception e) {
+            log.error("Could not get sessionid: "+e.getMessage());
+        }
+        return null;
     }
 }

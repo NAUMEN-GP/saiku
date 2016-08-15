@@ -1,19 +1,20 @@
 package org.saiku.olap.query2;
 
+import org.saiku.olap.query2.common.AbstractThinQuerySet;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.saiku.olap.query2.common.AbstractThinQuerySet;
 
 public class ThinLevel extends AbstractThinQuerySet {
 
 	private String name;
 	private String caption;
 	private ThinSelection selection;
-	private List<String> aggregators = new ArrayList<String>();
-	
-	public ThinLevel() {};
-	public ThinLevel(String name, String caption, ThinSelection selections, List<String> aggregators) {
+	private final List<String> aggregators = new ArrayList<>();
+
+	public ThinLevel() {}
+
+  public ThinLevel(String name, String caption, ThinSelection selections, List<String> aggregators) {
 		this.name = name;
 		this.caption = caption;
 		this.selection = selections;
@@ -22,6 +23,7 @@ public class ThinLevel extends AbstractThinQuerySet {
 		}
 		
 	}
+
 	@Override
 	public String getName() {
 		return name;

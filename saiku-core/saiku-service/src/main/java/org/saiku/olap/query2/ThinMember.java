@@ -5,10 +5,11 @@ public class ThinMember {
 	private String name;
 	private String uniqueName;
 	private String caption;
-	
-	public ThinMember() {};
+	private String type;
 
-	public ThinMember(String name, String uniqueName, String caption) {
+	public ThinMember() {}
+
+  public ThinMember(String name, String uniqueName, String caption) {
 		this.name = name;
 		this.uniqueName = uniqueName;
 		this.caption = caption;
@@ -56,6 +57,12 @@ public class ThinMember {
 		this.caption = caption;
 	}
 
-	
 
+  public String getType() {
+	return type;
+  }
+
+  public void setType(String type) {
+	this.type = type;
+  }
 }

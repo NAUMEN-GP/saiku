@@ -25,34 +25,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Story for lookup_datasources.story
  */
-public class OlapDataSourceStepsdef {
-
-
+class OlapDataSourceStepsdef {
 
   @Steps
+  private
   DataSteps data;
+
   private List<SaikuConnection> connections;
   private SaikuConnection ds;
 
   @Given("a server has no available data sources")
   public void givenAServerHasNoAvailableDataSources() throws Exception {
-    List<String> l = new ArrayList<String>();
-    data.createDataSources( l );
+    List<String> l = new ArrayList<>();
+    data.createDataSources(l);
     data.load();
   }
 
   @Given("There are $datasources data sources registered on the server")
   public void there_are_data_sources_registered_on_the_server( int datasources ) throws Exception {
-    List<String> l = new ArrayList<String>();
+    List<String> l = new ArrayList<>();
     l.add( "test" );
     l.add( "foodmart" );
-    data.createDataSources( l );
+    data.createDataSources(l);
     data.load();
+    assertThat(data.getDatasources().size(), equalTo(2));
   }
 
   @Given("The server has not yet been started")
@@ -68,13 +70,13 @@ public class OlapDataSourceStepsdef {
 
   @Given("a null data source is configured in the server")
   public void givenANullDataSourceIsConfiguredInTheServer() {
-    data.createDataSources( null );
+    data.createDataSources(null);
   }
 
 
   @When("I load one data source")
   public void i_load_one_data_source() throws Exception {
-    List<String> l = new ArrayList<String>();
+    List<String> l = new ArrayList<>();
     l.add( "foodmart" );
     data.createDataSources( l );
     data.loadsingle();
@@ -107,23 +109,28 @@ public class OlapDataSourceStepsdef {
 
   @When("2 new data sources are passed into the server as a list")
   public void when2NewDataSourcesArePassedIntoTheServerAsAList() throws Exception {
-    List<String> l = new ArrayList<String>();
-    l.add( "test" );
-    l.add( "foodmart" );
+    List<String> l = new ArrayList<>();
+    l.add("test");
+    l.add("foodmart");
 
-    data.addDataSources( l );
+    data.addDataSources(l);
     data.loadNewDataSources();
   }
 
-  @Pending
   @When("a user removes a data source")
   public void whenAUserRemoves1DataSource() {
-    data.removeDatasource( "foodmart" );
+    assertThat(data.removeDatasource("foodmart"), is(true));
+  }
+
+  private Boolean state = null;
+  @When("a user removes a non existing data source")
+  public void whenAUserRemovesNonExistingDataSource() {
+    state = data.removeDatasource("non-existing");
   }
 
   @When("a user removes a data source with an incorrect name")
   public void whenAUserRemovesADataSourceWithAnIncorrectName() {
-    data.removeDatasource( "broken" );
+    state = data.removeDatasource("broken");
   }
 
   @Then("there will be $datasources data sources listed")
@@ -132,20 +139,23 @@ public class OlapDataSourceStepsdef {
   }
 
   @Then("I will get the details for only the $name data source")
-  public void i_will_get_the_details_for_only_the_requested_data_source( String name ) throws Throwable {
+  public void i_will_get_the_details_for_only_the_requested_data_source( String name ) {
     assertThat( ds.getName(), equalTo( name ) );
   }
 
   @Then("The server should fail gracefully")
-  public void the_server_should_fail_gracefully() throws SaikuOlapException {
-
+  public void the_server_should_fail_gracefully() {
     data.getInvalidDatasource( "nonexistant" );
-
   }
 
   @Then("the server should throw an exception")
   public void thenTheServerShouldThrowAnException() throws Exception {
     data.createInvalidDataSources();
+  }
+
+  @Then("the server should return unsuccessful state")
+  public void thenTheServerShouldUnSuccessfulState() {
+    assertThat(state, is(false));
   }
 
   @Then("a SaikuServiceException should be thrown")

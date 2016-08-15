@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>saiku-core</artifactId>
-        <groupId>org.saiku</groupId>
-        <version>3.1-SNAPSHOT</version>
+        <groupId>org.saikuanalytics</groupId>
+        <version>3.8-RC5</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>saiku-web</artifactId>
-    <version>3.1-SNAPSHOT</version>
+    <version>3.8-RC5</version>
     <name>saiku - web</name>
     <packaging>jar</packaging>
 
@@ -75,11 +75,11 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>org.saiku</groupId>
+            <groupId>org.saikuanalytics</groupId>
             <artifactId>saiku-service</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.saiku</groupId>
+            <groupId>org.saikuanalytics</groupId>
             <artifactId>saiku-olap-util</artifactId>
         </dependency>
         <dependency>
@@ -135,12 +135,12 @@
             <artifactId>xml-apis</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>fop</artifactId>
+            <groupId>com.qmino</groupId>
+            <artifactId>miredot-annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-vfs</groupId>
-            <artifactId>commons-vfs</artifactId>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>fop</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-collections</groupId>
@@ -161,7 +161,6 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
-            <version>3.2.1.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -247,12 +246,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
-            <artifactId>pdfbox</artifactId>
+            <artifactId>pdfbox-app</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-cas</artifactId>
-            <version>3.2.1.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>org.jasig.cas.client</groupId>
@@ -262,7 +260,6 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <version>3.2.1.RELEASE</version>
         </dependency>
 
     </dependencies>

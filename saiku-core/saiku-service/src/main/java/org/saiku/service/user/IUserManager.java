@@ -9,26 +9,30 @@ import java.util.List;
  */
 public interface IUserManager {
 
-  public SaikuUser addUser(SaikuUser u);
+  SaikuUser addUser(SaikuUser u);
 
-  public boolean deleteUser(SaikuUser u);
+  boolean deleteUser(SaikuUser u);
 
-  public SaikuUser setUser(SaikuUser u);
+  SaikuUser setUser(SaikuUser u);
 
-  public SaikuUser getUser(int id);
+  SaikuUser getUser(int id);
 
-  public String[] getRoles(SaikuUser u);
+  String[] getRoles(SaikuUser u);
 
-  public void addRole(SaikuUser u);
+  void addRole(SaikuUser u);
 
-  public void removeRole(SaikuUser u);
+  void removeRole(SaikuUser u);
 
-    public void removeUser(String username);
+    void removeUser(String username);
 
-    public SaikuUser updateUser(SaikuUser u);
+    SaikuUser updateUser(SaikuUser u, boolean b);
 
-    public boolean isAdmin();
+    boolean isAdmin();
 
-    public List<String> getAdminRoles();
+    List<String> getAdminRoles();
 
+    String getActiveUsername();
+
+
+  String getSessionId();
 }

@@ -40,7 +40,7 @@ var WorkspaceDropZone = Backbone.View.extend({
         this.workspace = args.workspace;
 
         // Maintain `this` in jQuery event handlers
-        _.bindAll(this, "clear_axis");
+        _.bindAll(this, "clear_axis", "set_measures");
     },
 
     render: function() {
@@ -78,6 +78,7 @@ var WorkspaceDropZone = Backbone.View.extend({
             }
         });
 
+
         return this;
     },
 
@@ -90,10 +91,13 @@ var WorkspaceDropZone = Backbone.View.extend({
                 "type": $(element).find('a').attr('type')
             };
             details.push(measure);
+            Saiku.events.trigger("workspaceDropZone:select_measure", this,
+                {measure:measure});
         });
         this.workspace.query.helper.setMeasures(details);
         this.workspace.sync_query();
         this.workspace.query.run();
+
     },
 
     remove_measure_click: function(event) {
@@ -125,6 +129,7 @@ var WorkspaceDropZone = Backbone.View.extend({
 
         if (model.hasOwnProperty('queryModel') && model.queryModel.hasOwnProperty('axes')) {
             var axes = model.queryModel.axes;
+
             for (var axis in axes) {
                 var $axis = $(self.el).find('.fields_list[title="' + axis + '"]');
                 _.each(axes[axis].hierarchies, function(hierarchy) {
@@ -140,6 +145,20 @@ var WorkspaceDropZone = Backbone.View.extend({
                             .find('.folder_collapsed')
                             .addClass('selected');
                     }
+                    /*for (var member in hierarchy.cmembers) {
+                        if (hierarchy.cmembers.hasOwnProperty(member)) {
+                            var level = member.split('.')[member.split('.').length-1].replace(/[\[\]]/gi, '');
+
+                            h.find('li a[level="' + level + '"]').parent().show();
+
+                            // sync attribute list
+                            $(self.workspace.dimension_list.el).find('ul.d_hierarchy[hierarchy="' + hierarchy.name + '"] li a[level="' + level + '"]').parent()
+                                .draggable('disable')
+                                .parents('.parent_dimension')
+                                .find('.folder_collapsed')
+                                .addClass('selected');
+                        }
+                    }*/
                     var selection = $('<li class="selection"></li>');
                     selection.append(h);
                     selection.appendTo($axis.find('ul.connectable'));
@@ -176,6 +195,7 @@ var WorkspaceDropZone = Backbone.View.extend({
                 $axis.siblings('.clear_axis').removeClass('hide');
             }
         });
+
     },
 
     clear_axis: function(event) {
@@ -203,7 +223,7 @@ var WorkspaceDropZone = Backbone.View.extend({
         // Trigger event when select dimension
         Saiku.session.trigger('workspaceDropZone:select_dimension', { workspace: this.workspace });
 
-        if (false || $(ui.item).is(':visible')) {
+        if ($(ui.item).is(':visible')) {
             $(self.el).find('.axis_fields ul.hierarchy').each( function(index, element) {
                 $(element).find('li.temphide').show().removeClass('temphide');
             });
@@ -219,16 +239,31 @@ var WorkspaceDropZone = Backbone.View.extend({
             var toAxis = ui.item.parents('.axis_fields').parent().attr('title');
             var fromAxis = $(event.target).parents('.axis_fields').parent().attr('title');
             var isNew = ui.item.hasClass('d_level');
-            if (isNew) {
-                var level = ui.item.find('a.level').attr('level');
-                this.workspace.query.helper.includeLevel(toAxis, hierarchy, level, indexHierarchy);
-            } else {
-                self.workspace.query.helper.moveHierarchy(fromAxis, toAxis, hierarchy, indexHierarchy);
+            var isCalcMember = ui.item.hasClass('dimension-level-calcmember');
+
+            var level;
+            var uniqueName;
+            if (isCalcMember) {
+                /*uniqueName = ui.item.find('a.level').attr('uniquename');
+                this.workspace.toolbar.$el.find('.group_parents').removeClass('on');
+                this.workspace.toolbar.group_parents();
+                this.workspace.query.helper.includeLevelCalculatedMember(toAxis, hierarchy, level, uniqueName,
+                 indexHierarchy);*/
+            }
+            else {
+                if (isNew) {
+                    level = ui.item.find('a.level').attr('level');
+                    this.workspace.query.helper.includeLevel(toAxis, hierarchy, level, indexHierarchy);
+                } else {
+                    self.workspace.query.helper.moveHierarchy(fromAxis, toAxis, hierarchy, indexHierarchy);
+                }
             }
 
             $(ui.item).detach();
             this.workspace.sync_query();
             self.workspace.query.run();
+            Saiku.events.trigger("workspaceDropZone:select_dimension", this,
+                {level: level, uniquename: uniqueName, toAxis: toAxis, isNew: isNew, isCalc: isCalcMember, hierarchy:hierarchy});
             return;
         }
         return;
@@ -264,24 +299,41 @@ var WorkspaceDropZone = Backbone.View.extend({
         var $target = $(event.target).hasClass('d_level') ?
             $(event.target).find('.level') :
             $(event.target);
-        var dimension = $target.attr('hierarchy').replace(/[\[\]]/gi, '').split('.')[0],
-            hierarchy = $target.attr('hierarchy').replace(/[\[\]]/gi, '').split('.')[1]
-                ? $target.attr('hierarchy').replace(/[\[\]]/gi, '').split('.')[1]
-                : $target.attr('hierarchy').replace(/[\[\]]/gi, '').split('.')[0],
-            level = $target.text(),
+		var dimension = $target.attr('hierarchy').replace(/[\[\]]/gi, '').split('.')[0],
+			hierarchy = $target.attr('hierarchy').replace(/[\[\]]/gi, '').split('.')[1]
+				? $target.attr('hierarchy').replace(/[\[\]]/gi, '').split('.')[1]
+				: $target.attr('hierarchy').replace(/[\[\]]/gi, '').split('.')[0],
+            level = $target.attr('level'),
             objData = this.find_type_time(dimension, hierarchy, level),
             dimHier = $target.attr('hierarchy'),
             key = $target.attr('href').replace('#', '');
 
-        if (objData.level.annotations !== undefined &&
-            objData.level.annotations !== null &&
-			(objData.level.annotations.AnalyzerDateFormat !== undefined || 
-             objData.level.annotations.SaikuDayFormatString !== undefined)) {
+        // Fetch available members
+        this.member = new Member({}, {
+            cube: this.workspace.selected_cube,
+            dimension: key
+        });
+
+        var hName = decodeURIComponent(this.member.hierarchy),
+            memberHierarchy = this.workspace.query.helper.getHierarchy(hName),
+            memberLevel;
+
+        if (memberHierarchy && memberHierarchy.levels.hasOwnProperty(level)) {
+            memberLevel = memberHierarchy.levels[level];
+        }
+
+        if ((objData.level && objData.level.annotations !== undefined && objData.level.annotations !== null) &&
+           (objData.level.annotations.AnalyzerDateFormat !== undefined || objData.level.annotations.SaikuDayFormatString !== undefined) &&
+           ((_.has(memberLevel, 'selection') && memberLevel.selection.members.length === 0) ||
+           ((_.size(memberLevel) === 1 && _.has(memberLevel, 'name')) || (_.has(memberLevel, 'mdx') && memberLevel.mdx) || 
+           (_.size(memberLevel) === 2 && _.has(memberLevel, 'name') && _.has(memberLevel, 'mdx'))))) {
+
             // Launch date filter dialog
             (new DateFilterModal({
                 dimension: dimension,
                 hierarchy: hierarchy,
-                name: $target.text(),
+                target: $target,
+                name: $target.attr('level'),
                 data: objData,
                 analyzerDateFormat: objData.level.annotations.AnalyzerDateFormat,
                 dimHier: dimHier,
@@ -488,11 +540,6 @@ var WorkspaceDropZone = Backbone.View.extend({
                             "show_totals_max": {name: "Max", i18n: true},
                             "show_totals_avg": {name: "Avg", i18n: true}
                         }},
-						"parameters" : {name: "Parameters", i18n: true, items:
-				 		{
-					 		"ParamQuick": {name: "Add Parameter", i18n: true, items: addFun(levels, "Param")},
-							"ParamRemove": {name: "Remove Parameter", i18n: true, items: addFun(null, "Param")}
-				 		}},
                         "cancel" : { name: "Cancel", i18n: true }
 
                 };
@@ -570,7 +617,34 @@ var WorkspaceDropZone = Backbone.View.extend({
                                     success: save_custom,
                                     query: self.workspace.query,
                                     expression: filterCondition,
-                                    expressionType: "Filter"
+                                    expressionType: "Filter",
+                                     workspace: self.workspace
+                                })).render().open();
+
+                            } else if (key == "stringfilter") {
+                                save_custom = function(filterCondition, matchtype, filtervalue) {
+                                    filterCondition+='.CurrentMember.Name MATCHES ("(?i).*'+filtervalue+'.*")'
+                                    var expressions = [];
+                                    expressions.push(filterCondition);
+
+                                    self.workspace.query.helper.removeFilter(a, 'Generic');
+                                    a.filters.push(
+                                        {   "flavour" : "Generic",
+                                            "operator": null,
+                                            "function" : "Filter",
+                                            "expressions": expressions
+                                        });
+                                    self.synchronize_query();
+                                    self.workspace.query.run();
+                                };
+
+                                (new StringFilterModal({
+                                    axis: target,
+                                    success: save_custom,
+                                    query: self.workspace.query,
+                                    expression: filterCondition,
+                                    expressionType: "Filter",
+                                    workspace: self.workspace
                                 })).render().open();
 
                             } else if (key == "clearlimit") {
@@ -626,7 +700,6 @@ var WorkspaceDropZone = Backbone.View.extend({
                             } else if (key == "clearsort") {
                                 a.sortOrder = null;
                                 a.sortEvaluationLiteral = null;
-                                alert('maybe?');
                                 self.synchronize_query();
                                 self.workspace.query.run();
                             } else if (key.indexOf("show_totals_") === 0){

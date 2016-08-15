@@ -1,19 +1,10 @@
 package org.saiku.olap.query2.util;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.lang.StringUtils;
-import org.olap4j.Axis;
-import org.olap4j.OlapException;
-import org.olap4j.metadata.Cube;
-import org.olap4j.metadata.Hierarchy;
-import org.olap4j.metadata.Measure;
+
 import org.saiku.olap.query2.ThinAxis;
 import org.saiku.olap.query2.ThinCalculatedMeasure;
+import org.saiku.olap.query2.ThinCalculatedMember;
 import org.saiku.olap.query2.ThinDetails;
 import org.saiku.olap.query2.ThinHierarchy;
 import org.saiku.olap.query2.ThinLevel;
@@ -40,6 +31,27 @@ import org.saiku.query.mdx.NFilter;
 import org.saiku.query.mdx.NameFilter;
 import org.saiku.query.mdx.NameLikeFilter;
 import org.saiku.query.metadata.CalculatedMeasure;
+import org.saiku.query.metadata.CalculatedMember;
+
+import org.olap4j.Axis;
+import org.olap4j.OlapException;
+import org.olap4j.impl.IdentifierParser;
+import org.olap4j.mdx.IdentifierNode;
+import org.olap4j.mdx.IdentifierSegment;
+import org.olap4j.metadata.Cube;
+import org.olap4j.metadata.Hierarchy;
+import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Measure;
+import org.olap4j.metadata.Member;
+import org.olap4j.metadata.NamedList;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import mondrian.olap4j.SaikuMondrianHelper;
 
 public class Fat {
 	
@@ -56,27 +68,104 @@ public class Fat {
 		ThinQueryModel model = tq.getQueryModel();
 		convertAxes(q, tq.getQueryModel().getAxes(), tq);
 		convertCalculatedMeasures(q, model.getCalculatedMeasures());
+	  	convertCalculatedMembers(q, model.getCalculatedMembers());
 		convertDetails(q, model.getDetails());
 		q.setVisualTotals(model.isVisualTotals());
 		q.setVisualTotalsPattern(model.getVisualTotalsPattern());
 		return q;
 	}
 
-	private static void convertCalculatedMeasures(Query q, List<ThinCalculatedMeasure> thinCms) {
+  private static void convertCalculatedMembers(Query q, List<ThinCalculatedMember> thinCms) {
+	  if (thinCms != null && thinCms.size() > 0) {
+		  for (ThinCalculatedMember qcm : thinCms) {
+			  // TODO improve this
+			  String name = qcm.getHierarchyName();
+			  if(SaikuMondrianHelper.getMondrianServer(q.getConnection()).getVersion().getMajorVersion()==3) {
+				  name = qcm.getHierarchyName().replaceAll("\\[", "");
+				  name = name.replaceAll("]", "");
+			  }
+			  //Hierarchy h = q.getCube().getHierarchies().get(name);
+			  NamedList<Hierarchy> hs = q.getCube().getHierarchies();
+			  Hierarchy h = null;
+			  for(Hierarchy h2 : hs){
+				  if(h2.getUniqueName().equals(qcm.getHierarchyName())){
+					  h = h2;
+				  }
+				  else if(h2.getUniqueName().equals(name)){
+					  h = h2;
+					  break;
+				  }
+			  }
+			  CalculatedMember cm =
+					  new CalculatedMember(
+                                                    h.getDimension(),
+                                                    h,
+							  qcm.getName(),
+							  null,
+							  null,
+							  Member.Type.FORMULA,
+							  qcm.getFormula(),
+							  qcm.getProperties());
+
+			  q.addCalculatedMember(q.getHierarchy(h),cm);
+		  }
+	  }
+	/*Hierarchy h = q.getCube().getHierarchies().get("Products");
+	CalculatedMember cm =
+		new CalculatedMember(
+			h.getDimension(),
+			h,
+			"Consumable",
+			"Consumable",
+			null,
+			Member.Type.FORMULA,
+			"Aggregate({Product.Drink, Product.Food})",
+			null);
+	q.addCalculatedMember(q.getHierarchy(h), cm);
+
+	try {
+	  q.getHierarchy(h).includeCalculatedMember(cm);
+	} catch (OlapException e) {
+	  e.printStackTrace();
+	}*/
+	/*if (thinCms != null && thinCms.size() > 0) {
+	  for (ThinCalculatedMember qcm : thinCms) {
+		NamedList<Hierarchy> h2 = q.getCube().getHierarchies();
+		for(Hierarchy h: h2){
+		  if(h.getUniqueName().equals(qcm.getHierarchyName())){
+			CalculatedMember cm =
+				new CalculatedMember(
+					h.getDimension(),
+					h,
+					qcm.getName(),
+					qcm.getName(),
+					null,
+					Member.Type.FORMULA,
+					qcm.getFormula(),
+					null);
+			q.addCalculatedMember(q.getHierarchy(h), cm);
+			break;
+		  }
+		}
+
+	  }
+	}*/
+  }
+
+  private static void convertCalculatedMeasures(Query q, List<ThinCalculatedMeasure> thinCms) {
 		if (thinCms != null && thinCms.size() > 0) {
 			for (ThinCalculatedMeasure qcm : thinCms) {
-				// TODO improve this
-				Hierarchy h = q.getCube().getMeasures().get(0).getHierarchy();
-				
-				CalculatedMeasure cm = 
-						new CalculatedMeasure(
-								h, 
-								qcm.getName(), 
-								null, 
-								qcm.getFormula(),
-								qcm.getProperties());
-				
-				q.addCalculatedMeasure(cm);
+			  Hierarchy h = q.getCube().getHierarchies().get("Measures");
+			  CalculatedMeasure cm =
+					  new CalculatedMeasure(
+						  h,
+						  qcm.getName(),
+						  null,
+						  qcm.getFormula(),
+						  qcm.getProperties());
+
+				  q.addCalculatedMeasure(cm);
+
 			}
 		}
 	}
@@ -111,7 +200,7 @@ public class Fat {
 	}
 	
 	private static List<AxisLocation> sortAxes(Set<AxisLocation> axes) {
-		List<AxisLocation> ax = new ArrayList<AxisLocation>();
+		List<AxisLocation> ax = new ArrayList<>();
 		for (AxisLocation a : AxisLocation.values()) {
 			if (axes.contains(a)){
 				ax.add(a);
@@ -128,7 +217,7 @@ public class Fat {
 		for (ThinHierarchy hierarchy : thinAxis.getHierarchies()) {
 			QueryHierarchy qh = query.getHierarchy(hierarchy.getName());
 			if (qh != null) {
-				convertHierarchy(qh, hierarchy, tq);
+				convertHierarchy(query, qh, hierarchy, tq);
 				qaxis.addHierarchy(qh);
 			}
 		}
@@ -138,67 +227,149 @@ public class Fat {
 		extendSortableQuerySet(query, qaxis, thinAxis);
 	}
 	
-	private static void convertHierarchy(QueryHierarchy qh, ThinHierarchy th, ThinQuery tq) throws OlapException {
+	private static void convertHierarchy(Query q, QueryHierarchy qh, ThinHierarchy th, ThinQuery tq) throws
+		OlapException {
+
 		for (ThinLevel tl : th.getLevels().values()) {
-			QueryLevel ql = qh.includeLevel(tl.getName());
-			
-			List<String> aggs =  tl.getAggregators();
+		  QueryLevel ql = qh.includeLevel(tl.getName());
+
+
+		  if (ql == null) {
+			qh.includeMember(th.getName() + ".[" + tl.getName() + "]");
+		  } else {
+			List<String> aggs = tl.getAggregators();
 			qh.getQuery().setAggregators(ql.getUniqueName(), aggs);
-			
+
 			if (tl.getSelection() != null) {
-				String parameter = tl.getSelection().getParameterName();
-				if (StringUtils.isNotBlank(parameter)) {
-					ql.setParameterName(parameter);
-					ql.setParameterSelectionType(org.saiku.query.Parameter.SelectionType.INCLUSION);
-				}
-				switch(tl.getSelection().getType()) {
-				case INCLUSION:
+			  String parameter = tl.getSelection().getParameterName();
+			  if (StringUtils.isNotBlank(parameter)) {
+				ql.setParameterName(parameter);
+				ql.setParameterSelectionType(org.saiku.query.Parameter.SelectionType.INCLUSION);
+			  }
+			  switch (tl.getSelection().getType()) {
+			  case INCLUSION:
 //					if (parameterValues != null) {
 //						for (String m : parameterValues) {
 //							qh.includeMember(m);
 //						}
 //
 //					} else {
-						for (ThinMember tm : tl.getSelection().getMembers()) {
-							qh.includeMember(tm.getUniqueName());
-						}
-						ql.setParameterSelectionType(org.saiku.query.Parameter.SelectionType.INCLUSION);
+				for (ThinMember tm : tl.getSelection().getMembers()) {
+					if(tm.getType() == null || !tm.getType().equals("calculatedmember")) {
+						qh.includeMember(tm.getUniqueName());
+					}
+				}
+				ql.setParameterSelectionType(org.saiku.query.Parameter.SelectionType.INCLUSION);
 //					}
-					break;
+				break;
 
-				case EXCLUSION:
+			  case EXCLUSION:
 //					if (parameterValues != null) {
 //						for (String m : parameterValues) {
 //							qh.excludeMember(m);
 //						}
 //
 //					} else {
-						for (ThinMember tm : tl.getSelection().getMembers()) {
-							qh.excludeMember(tm.getUniqueName());
-						}
-						ql.setParameterSelectionType(org.saiku.query.Parameter.SelectionType.EXCLUSION);
-//					}
-					break;
-				case RANGE:
-					int size = tl.getSelection().getMembers().size();
-					int iterations = tl.getSelection().getMembers().size() / 2;
-					if (size > 2 && size % 2 == 0) {
-						for (int i = 0; i < iterations; i++) {
-							ThinMember start = tl.getSelection().getMembers().get(iterations * 2 + i);
-							ThinMember end = tl.getSelection().getMembers().get(iterations * 2 + i + 1);
-							qh.includeRange(start.getUniqueName(), end.getUniqueName());
-						}
+				for (ThinMember tm : tl.getSelection().getMembers()) {
+					if(tm.getType() == null || !tm.getType().equals("calculatedmember")) {
+						qh.excludeMember(tm.getUniqueName());
 					}
-					break;
-				default:
-					break;
+				}
+				ql.setParameterSelectionType(org.saiku.query.Parameter.SelectionType.EXCLUSION);
+//					}
+				break;
+			  case RANGE:
+				int size = tl.getSelection().getMembers().size();
+				int iterations = tl.getSelection().getMembers().size() / 2;
+				if (size > 2 && size % 2 == 0) {
+				  for (int i = 0; i < iterations; i++) {
+					ThinMember start = tl.getSelection().getMembers().get(iterations * 2 + i);
+					ThinMember end = tl.getSelection().getMembers().get(iterations * 2 + i + 1);
+					qh.includeRange(start.getUniqueName(), end.getUniqueName());
+				  }
+				}
+				break;
+			  default:
+				break;
 
+			  }
+			}
+
+			extendQuerySet(qh.getQuery(), ql, tl);
+		  }
+		  extendSortableQuerySet(qh.getQuery(), qh, th);
+		}
+
+		for (Object o : th.getCmembers().entrySet()) {
+			Map.Entry pair = (Map.Entry) o;
+
+			ThinCalculatedMember cres = null;
+			for (ThinCalculatedMember c : tq.getQueryModel().getCalculatedMembers()) {
+				if (c.getUniqueName().equals(pair.getValue())) {
+					cres = c;
+					break;
+				}
+				//it.remove(); // avoids a ConcurrentModificationException
+			}
+
+			if(cres == null){
+				for (ThinCalculatedMember c : tq.getQueryModel().getCalculatedMembers()) {
+					String cname = c.getUniqueName();
+					int ord = StringUtils.ordinalIndexOf(cname, "[", 2);
+					cname = cname.substring(ord, cname.length());
+					if (cname.equals(pair.getValue())) {
+						cres = c;
+						break;
+					}
+					//it.remove(); // avoids a ConcurrentModificationException
 				}
 			}
-			
-			extendQuerySet(qh.getQuery(), ql, tl);
+
+			if(cres == null){
+				for (ThinCalculatedMember c : tq.getQueryModel().getCalculatedMembers()) {
+					String cname = c.getUniqueName();
+					int ord = StringUtils.ordinalIndexOf((String) pair.getValue(), "[", 2);
+					String v = ((String)pair.getValue()).substring(ord, ((String)pair.getValue()).length());
+					if (cname.equals(v)) {
+						cres = c;
+						break;
+					}
+					//it.remove(); // avoids a ConcurrentModificationException
+				}
+			}
+
+			Hierarchy h2 = null;
+			for (Hierarchy h : q.getCube().getHierarchies()) {
+				if (h.getUniqueName().equals(cres.getHierarchyName())) {
+					h2 = h;
+					break;
+				}
+			}
+			CalculatedMember cm;
+			Member member = null;
+			if(cres.getParentMember()!=null) {
+				List<IdentifierSegment> nameParts = IdentifierParser.parseIdentifier(cres.getParentMember());
+
+				member = q.getCube().lookupMember(nameParts);
+			}
+
+
+			cm = new CalculatedMember(
+					q.getCube().getDimensions().get(cres.getDimension()),
+					h2,
+					cres.getName(),
+					cres.getName(),
+					member,
+					Member.Type.FORMULA,
+					cres.getFormula(),
+					null);
+
+			qh.includeCalculatedMember(cm);
+			extendSortableQuerySet(qh.getQuery(), qh, th);
+
 		}
 		extendSortableQuerySet(qh.getQuery(), qh, th);
+
 	}
 
 
@@ -227,7 +398,7 @@ public class Fat {
 	}
 	
 	private static List<IFilterFunction> convertFilters(Query q, List<ThinFilter> filters) {
-		List<IFilterFunction> qfs = new ArrayList<IFilterFunction>();
+		List<IFilterFunction> qfs = new ArrayList<>();
 		for (ThinFilter f : filters) {
 			switch(f.getFlavour()) {
 				case Name:
@@ -235,7 +406,12 @@ public class Fat {
 					if (exp != null && exp.size() > 1) {
 						String hierarchyName = exp.remove(0);
 						QueryHierarchy qh = q.getHierarchy(hierarchyName);
-						NameFilter nf = new NameFilter(qh.getHierarchy(), exp);
+						String op = null;
+						if(f.getOperator()!=null){
+							op = f.getOperator().toString();
+						}
+
+						NameFilter nf = new NameFilter(qh.getHierarchy(), exp, op);
 						qfs.add(nf);
 					}
 					break;
@@ -244,7 +420,12 @@ public class Fat {
 					if (exp2 != null && exp2.size() > 1) {
 						String hierarchyName = exp2.remove(0);
 						QueryHierarchy qh = q.getHierarchy(hierarchyName);
-						NameLikeFilter nf = new NameLikeFilter(qh.getHierarchy(), exp2);
+						String op = null;
+						if(f.getOperator()!=null){
+							op = f.getOperator().toString();
+						}
+
+						NameLikeFilter nf = new NameLikeFilter(qh.getHierarchy(), exp2, op);
 						qfs.add(nf);
 					}
 					break;
